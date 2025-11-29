@@ -18,13 +18,13 @@ export class AudioManager {
         this.settings[group].volume = volume;
     }
 
-    addAutioTrack(key: string, group: string, path: string): void {
+    addAudioTrack(key: string, group: string, path: string): void {
         this.settings[group] = this.settings[group] || { ...DEFAULT_AUDIO_SETTINGS };
-        this.tracks[group] = this.tracks[group] || [];
+        this.tracks[key] = this.tracks[key] || [];
         const audioElement = new Audio(path);
         audioElement.preload = 'auto';
         const track: AudioTrack = { key, group, audio: audioElement };
-        this.tracks[group].push(track);
+        this.tracks[key].push(track);
     }
 
     playAudioTrack(key: string): void {
