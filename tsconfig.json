@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "composite": true,            
+    "target": "es2022",
+    "module": "ESNext", 
+    "moduleResolution": "bundler",
+    "rootDir": "./src",         
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true, 
+    "strict": true,
+    "noImplicitAny": true,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "./src/**/*"
+  ],
+}
