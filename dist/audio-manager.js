@@ -22,8 +22,11 @@ export class AudioManager {
         this.tracks[key].push(track);
     }
     playAudioTrack(key) {
+        if (!this.tracks[key] || this.tracks[key].length === 0) {
+            return;
+        }
         this.trackSelector[key] = this.trackSelector[key]?.length ? this.trackSelector[key] : [...this.tracks[key]];
-        const track = this.trackSelector[key].splice(Math.random() * this.trackSelector[key].length, 1)[0];
+        const track = this.trackSelector[key].splice(Math.floor(Math.random() * this.trackSelector[key].length), 1)[0];
         if (this.settings[track.group]?.enabled) {
             track.audio.volume = this.settings[track.group].volume;
             track.audio.currentTime = 0;
