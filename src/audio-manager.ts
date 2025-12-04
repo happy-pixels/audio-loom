@@ -21,7 +21,7 @@ export class AudioManager {
         this.settings[group] = this.settings[group] || { ...DEFAULT_AUDIO_SETTINGS };
         const wasEnabled = this.settings[group].enabled;
         this.settings[group].enabled = enabled;
-        
+
 
         if (this.continuousPlayback && this.continuousPlayback.track.group == group) {
             if (!enabled && wasEnabled && this.continuousPlayback.isPlaying) {
@@ -75,21 +75,38 @@ export class AudioManager {
             return;
         }
         track.audio.currentTime = 0;
-        this.continuousPlayback = {
-            key,
-            track,
-            isPlaying: false,
-        }
+        track.audio.muted = true;
+        track.audio.volume = 0;
+        track.audio.play().then(() => {
+            setTimeout(() => {
+                if (this.continuousPlayback && this.continuousPlayback.key === key) {
+                    return;
+                }
+                track.audio.pause();
+                track.audio.currentTime = 0;
+                track.audio.muted = false;
+                track.audio.volume = this.settings[track.group].volume;
+                this.continuousPlayback = {
+                    key,
+                    track,
+                    isPlaying: false
+                }
 
-        fromEvent(track.audio, 'ended')
-            .pipe(takeUntil(this.audioEnd$))
-            .subscribe(() => this.onTrackEnded());
-        
-        if (this.settings[track.group]?.enabled) {
-            track.audio.volume = this.settings[track.group].volume;
-            track.audio.play();
-            this.continuousPlayback.isPlaying = true;
-        }
+                if (this.settings[track.group]?.enabled) {
+                    track.audio.volume = this.settings[track.group].volume;
+                    track.audio.play();
+                    this.continuousPlayback.isPlaying = true;
+                }
+                const checkProgress = () => {
+                    const progress = (track.audio.currentTime / track.audio.duration) * 100;
+                    if (progress >= 99.5) {
+                        track.audio.removeEventListener('timeupdate', checkProgress);
+                        this.onTrackEnded();
+                    }
+                };
+                track.audio.addEventListener('timeupdate', checkProgress);
+            }, 50);
+        });
     }
 
     stopContinuous(): void {
@@ -116,14 +133,22 @@ export class AudioManager {
         const { key, track } = this.continuousPlayback;
         const nextTrack = this.selectRandomTrack(key);
         if (nextTrack && this.settings[track.group]?.enabled) {
-            fromEvent(nextTrack.audio, 'ended')
-                .pipe(takeUntil(this.audioEnd$))
-                .subscribe(() => this.onTrackEnded());
-            
-            nextTrack.audio.volume = this.settings[track.group].volume;
             nextTrack.audio.currentTime = 0;
-            nextTrack.audio.play();
-            this.continuousPlayback.track = nextTrack;
+            setTimeout(() => {
+                nextTrack.audio.volume = this.settings[track.group].volume;
+                nextTrack.audio.play();
+                this.continuousPlayback!.track = nextTrack;
+                this.continuousPlayback!.isPlaying = true;
+                let logCount = 0;
+                const checkProgress = () => {
+                    const progress = (nextTrack.audio.currentTime / nextTrack.audio.duration) * 100;
+                    if (progress >= 99.5) {
+                        nextTrack.audio.removeEventListener('timeupdate', checkProgress);
+                        this.onTrackEnded();
+                    }
+                };
+                nextTrack.audio.addEventListener('timeupdate', checkProgress);
+            }, 50);
         } else {
             this.continuousPlayback.isPlaying = false;
         }
