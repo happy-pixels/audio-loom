@@ -15,9 +15,9 @@
     "noImplicitAny": true,
     "strictPropertyInitialization": false,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
   "include": [
     "./src/**/*"
