@@ -97,8 +97,15 @@ export class AudioManager {
                     track.audio.play();
                     this.continuousPlayback.isPlaying = true;
                 }
+
+                let logCount = 0;
                 const checkProgress = () => {
                     const progress = (track.audio.currentTime / track.audio.duration) * 100;
+                    logCount++;
+                    if (logCount % 10 === 0) {
+                        // Just to prevent potential infinite loops
+                        console.warn(`AudioManager: Checking progress for continuous playback of '${key}', attempt ${logCount}`);
+                    }
                     if (progress >= 99.5) {
                         track.audio.removeEventListener('timeupdate', checkProgress);
                         this.onTrackEnded();
@@ -142,6 +149,11 @@ export class AudioManager {
                 let logCount = 0;
                 const checkProgress = () => {
                     const progress = (nextTrack.audio.currentTime / nextTrack.audio.duration) * 100;
+                    logCount++;
+                    if (logCount % 10 === 0) {
+                        // Just to prevent potential infinite loops
+                        console.warn(`AudioManager: Checking progress for continuous playback of '${key}', attempt ${logCount}`);
+                    }
                     if (progress >= 99.5) {
                         nextTrack.audio.removeEventListener('timeupdate', checkProgress);
                         this.onTrackEnded();
