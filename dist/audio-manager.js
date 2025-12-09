@@ -42,7 +42,7 @@ export class AudioManager {
         if (!this.tracks[key] || this.tracks[key].length === 0) {
             return;
         }
-        this.audioEnd$.next();
+        // this.audioEnd$.next();
         this.trackSelector[key] = this.trackSelector[key]?.length ? this.trackSelector[key] : [...this.tracks[key]];
         const track = this.selectRandomTrack(key);
         if (track && this.settings[track.group]?.enabled) {
