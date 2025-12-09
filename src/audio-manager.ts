@@ -1,4 +1,4 @@
-import { Subject, fromEvent } from 'rxjs';
+import { Subject, from, fromEvent } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AudioSettings, AudioTrack, DEFAULT_AUDIO_SETTINGS } from './types';
 
@@ -74,45 +74,31 @@ export class AudioManager {
         if (!track) {
             return;
         }
-        track.audio.currentTime = 0;
-        track.audio.muted = true;
-        track.audio.volume = 0;
-        track.audio.play().then(() => {
-            setTimeout(() => {
-                if (this.continuousPlayback && this.continuousPlayback.key === key) {
-                    return;
-                }
-                track.audio.pause();
+        fromEvent(track.audio, 'loadedmetadata')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+                console.log(`AudioManager: Loaded track for continuous playback: ${track.audio.src}`);
+                console.log(`AudioManager: ready state: ${track.audio.readyState}`);
                 track.audio.currentTime = 0;
-                track.audio.muted = false;
-                track.audio.volume = this.settings[track.group].volume;
                 this.continuousPlayback = {
                     key,
                     track,
                     isPlaying: false
                 }
-
                 if (this.settings[track.group]?.enabled) {
                     track.audio.volume = this.settings[track.group].volume;
                     track.audio.play();
-                    this.continuousPlayback.isPlaying = true;
+                    this.continuousPlayback!.isPlaying = true;
                 }
+            });
+        fromEvent(track.audio, 'ended')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+                console.log(`AudioManager: Track ended: ${track.audio.src}`);
+                this.onTrackEnded();
+            });
 
-                let logCount = 0;
-                const checkProgress = () => {
-                    const progress = (track.audio.currentTime / track.audio.duration) * 100;
-                    logCount++;
-                    if (logCount % 10 === 0) {
-                        console.warn(`AudioManager: ${key}: progress: ${progress}`);
-                    }
-                    if (progress >= 99.5) {
-                        track.audio.removeEventListener('timeupdate', checkProgress);
-                        this.onTrackEnded();
-                    }
-                };
-                track.audio.addEventListener('timeupdate', checkProgress);
-            }, 50);
-        });
+        track.audio.load();
     }
 
     stopContinuous(): void {
@@ -138,29 +124,31 @@ export class AudioManager {
         this.audioEnd$.next();
         const { key, track } = this.continuousPlayback;
         const nextTrack = this.selectRandomTrack(key);
-        if (nextTrack && this.settings[track.group]?.enabled) {
-            nextTrack.audio.currentTime = 0;
-            setTimeout(() => {
-                nextTrack.audio.volume = this.settings[track.group].volume;
-                nextTrack.audio.play();
-                this.continuousPlayback!.track = nextTrack;
-                this.continuousPlayback!.isPlaying = true;
-                let logCount = 0;
-                const checkProgress = () => {
-                    const progress = (nextTrack.audio.currentTime / nextTrack.audio.duration) * 100;
-                    logCount++;
-                    if (logCount % 10 === 0) {
-                        console.warn(`AudioManager: ${key}: progress: ${progress}`);
-                    }
-                    if (progress >= 99.5) {
-                        nextTrack.audio.removeEventListener('timeupdate', checkProgress);
-                        this.onTrackEnded();
-                    }
-                };
-                nextTrack.audio.addEventListener('timeupdate', checkProgress);
-            }, 50);
-        } else {
+        if (!nextTrack) {
             this.continuousPlayback.isPlaying = false;
+            return;
         }
+        fromEvent(nextTrack.audio, 'loadedmetadata')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+                nextTrack.audio.currentTime = 0;
+                if (this.settings[nextTrack.group]?.enabled) {
+                    nextTrack.audio.volume = this.settings[nextTrack.group].volume;
+                    this.continuousPlayback = {
+                        key,
+                        track: nextTrack,
+                        isPlaying: false
+                    }
+                    nextTrack.audio.play();
+                    this.continuousPlayback.isPlaying = true;
+                }
+            });
+        fromEvent(nextTrack.audio, 'ended')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+                console.log(`AudioManager: Track ended: ${nextTrack.audio.src}`);
+                this.onTrackEnded();
+            });
+        nextTrack.audio.load();  this.continuousPlayback.isPlaying = false;
     }
 }
