@@ -42,7 +42,7 @@ export class AudioManager {
         if (!this.tracks[key] || this.tracks[key].length === 0) {
             return;
         }
-        this.audioEnd$.next();
+        // this.audioEnd$.next();
         this.trackSelector[key] = this.trackSelector[key]?.length ? this.trackSelector[key] : [...this.tracks[key]];
         const track = this.selectRandomTrack(key);
         if (track && this.settings[track.group]?.enabled) {
@@ -60,20 +60,30 @@ export class AudioManager {
         if (!track) {
             return;
         }
-        track.audio.currentTime = 0;
-        this.continuousPlayback = {
-            key,
-            track,
-            isPlaying: false,
-        };
+        fromEvent(track.audio, 'loadedmetadata')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+            console.log(`AudioManager: Loaded track for continuous playback: ${track.audio.src}`);
+            console.log(`AudioManager: ready state: ${track.audio.readyState}`);
+            track.audio.currentTime = 0;
+            this.continuousPlayback = {
+                key,
+                track,
+                isPlaying: false
+            };
+            if (this.settings[track.group]?.enabled) {
+                track.audio.volume = this.settings[track.group].volume;
+                track.audio.play();
+                this.continuousPlayback.isPlaying = true;
+            }
+        });
         fromEvent(track.audio, 'ended')
             .pipe(takeUntil(this.audioEnd$))
-            .subscribe(() => this.onTrackEnded());
-        if (this.settings[track.group]?.enabled) {
-            track.audio.volume = this.settings[track.group].volume;
-            track.audio.play();
-            this.continuousPlayback.isPlaying = true;
-        }
+            .subscribe(() => {
+            console.log(`AudioManager: Track ended: ${track.audio.src}`);
+            this.onTrackEnded();
+        });
+        track.audio.load();
     }
     stopContinuous() {
         if (!this.continuousPlayback) {
@@ -95,18 +105,33 @@ export class AudioManager {
         this.audioEnd$.next();
         const { key, track } = this.continuousPlayback;
         const nextTrack = this.selectRandomTrack(key);
-        if (nextTrack && this.settings[track.group]?.enabled) {
-            fromEvent(nextTrack.audio, 'ended')
-                .pipe(takeUntil(this.audioEnd$))
-                .subscribe(() => this.onTrackEnded());
-            nextTrack.audio.volume = this.settings[track.group].volume;
-            nextTrack.audio.currentTime = 0;
-            nextTrack.audio.play();
-            this.continuousPlayback.track = nextTrack;
-        }
-        else {
+        if (!nextTrack) {
             this.continuousPlayback.isPlaying = false;
+            return;
         }
+        fromEvent(nextTrack.audio, 'loadedmetadata')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+            nextTrack.audio.currentTime = 0;
+            if (this.settings[nextTrack.group]?.enabled) {
+                nextTrack.audio.volume = this.settings[nextTrack.group].volume;
+                this.continuousPlayback = {
+                    key,
+                    track: nextTrack,
+                    isPlaying: false
+                };
+                nextTrack.audio.play();
+                this.continuousPlayback.isPlaying = true;
+            }
+        });
+        fromEvent(nextTrack.audio, 'ended')
+            .pipe(takeUntil(this.audioEnd$))
+            .subscribe(() => {
+            console.log(`AudioManager: Track ended: ${nextTrack.audio.src}`);
+            this.onTrackEnded();
+        });
+        nextTrack.audio.load();
+        this.continuousPlayback.isPlaying = false;
     }
 }
 //# sourceMappingURL=audio-manager.js.map
