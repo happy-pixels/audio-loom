@@ -290,23 +290,7 @@ useEffect(() => {
 
 ## Documentation
 
-Full API documentation is available in the `docs/` folder and can be hosted via GitHub Pages.
-
-**Generate documentation:**
-```bash
-pnpm docs
-```
-
-**Enable GitHub Pages:**
-1. Push the repository to GitHub
-2. Go to your repository on GitHub
-3. Navigate to **Settings** → **Pages**
-4. Under "Build and deployment":
-   - Source: **Deploy from a branch**
-   - Branch: **main**
-   - Folder: **/docs**
-5. Click **Save**
-6. After a few minutes, docs will be live at `https://[username].github.io/[repo-name]/`
+Full API documentation is available at [https://happy-pixels.github.io/audio-loom/](https://happy-pixels.github.io/audio-loom/)
 
 ## Tech Stack
 
