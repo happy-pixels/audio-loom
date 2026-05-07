@@ -1,0 +1,23 @@
+{
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["./src/index.ts"],
+    "out": "./docs",
+    "name": "Audio Loom",
+    "readme": "./README.md",
+    "includeVersion": true,
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "githubPages": true,
+    "navigation": {
+        "includeCategories": true,
+        "includeGroups": true
+    },
+    "categorizeByGroup": true,
+    "sort": ["source-order"],
+    "visibilityFilters": {
+        "protected": false,
+        "private": false,
+        "inherited": true,
+        "external": false
+    }
+}

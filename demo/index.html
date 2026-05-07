@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Loom Demo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            color: #00d9ff;
+            border-bottom: 2px solid #00d9ff;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #ff6b6b;
+            margin-top: 30px;
+        }
+        .section {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background: #0f3460;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #1a4f8a;
+        }
+        button:active {
+            background: #00d9ff;
+        }
+        button:disabled {
+            background: #333;
+            cursor: not-allowed;
+        }
+        .status {
+            background: #0f3460;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        input[type="range"] {
+            width: 200px;
+            margin: 0 10px;
+        }
+        label {
+            display: inline-block;
+            min-width: 120px;
+        }
+        .control-row {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .events {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            background: #0a0a1a;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .event-item {
+            padding: 2px 0;
+            border-bottom: 1px solid #333;
+        }
+        .event-start { color: #4ade80; }
+        .event-end { color: #f87171; }
+        .event-load { color: #60a5fa; }
+        .event-error { color: #ff6b6b; }
+        #initOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #initOverlay button {
+            font-size: 24px;
+            padding: 20px 40px;
+            background: #00d9ff;
+            color: #000;
+        }
+        #initOverlay button:hover {
+            background: #00b8d9;
+        }
+        .note {
+            color: #888;
+            font-size: 12px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div id="initOverlay">
+        <button id="initBtn">Click to Enable Audio</button>
+    </div>
+
+    <h1>Audio Loom Demo</h1>
+    <p>Interactive demonstration of the Audio Loom library features.</p>
+    <p class="note">Note: This demo uses placeholder audio URLs. Replace with real audio files to hear actual sounds.</p>
+
+    <div class="section">
+        <h2>Audio Context</h2>
+        <div id="contextStatus" class="status">Status: Not initialized</div>
+        <button id="suspendBtn">Suspend Context</button>
+        <button id="resumeBtn">Resume Context</button>
+    </div>
+
+    <div class="section">
+        <h2>Volume Controls</h2>
+        <div class="control-row">
+            <label>Master Volume:</label>
+            <input type="range" id="masterVolume" min="0" max="100" value="100">
+            <span id="masterVolumeValue">100%</span>
+        </div>
+        <div class="control-row">
+            <label>SFX Volume:</label>
+            <input type="range" id="sfxVolume" min="0" max="100" value="100">
+            <span id="sfxVolumeValue">100%</span>
+        </div>
+        <div class="control-row">
+            <label>Music Volume:</label>
+            <input type="range" id="musicVolume" min="0" max="100" value="100">
+            <span id="musicVolumeValue">100%</span>
+        </div>
+        <div class="control-row">
+            <label>SFX Enabled:</label>
+            <input type="checkbox" id="sfxEnabled" checked>
+        </div>
+        <div class="control-row">
+            <label>Music Enabled:</label>
+            <input type="checkbox" id="musicEnabled" checked>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>One-Shot Playback (SFX)</h2>
+        <button id="playExplosion">Play Explosion</button>
+        <button id="playFootstep">Play Footstep</button>
+        <button id="playClick">Play Click</button>
+        <div id="poolStats" class="status">Pool stats will appear here</div>
+    </div>
+
+    <div class="section">
+        <h2>Continuous Playback (Music)</h2>
+        <button id="playMusic">Play Music</button>
+        <button id="pauseMusic">Pause</button>
+        <button id="resumeMusic">Resume</button>
+        <button id="stopMusic">Stop</button>
+        <div class="control-row">
+            <label>Playback Rate:</label>
+            <input type="range" id="playbackRate" min="25" max="200" value="100">
+            <span id="playbackRateValue">1.0x</span>
+        </div>
+        <div id="playbackInfo" class="status">Playback info will appear here</div>
+    </div>
+
+    <div class="section">
+        <h2>Fading</h2>
+        <button id="fadeIn">Fade In Music (2s)</button>
+        <button id="fadeOut">Fade Out (2s)</button>
+        <button id="crossFade">Cross-Fade (2s)</button>
+    </div>
+
+    <div class="section">
+        <h2>Events Log</h2>
+        <button id="clearEvents">Clear</button>
+        <div id="eventsLog" class="events"></div>
+    </div>
+
+    <script type="module">
+        // Import AudioManager - adjust path as needed for your setup
+        // For this demo, we'll create a mock since it's a standalone HTML file
+
+        // Mock AudioManager for demo purposes
+        // In a real project, you would import from '@happy-pixels/audio-loom'
+        class MockAudioManager {
+            constructor() {
+                this.masterVolume = 1;
+                this.groups = {
+                    sfx: { enabled: true, volume: 1 },
+                    music: { enabled: true, volume: 1 }
+                };
+                this.isReady = false;
+                this.musicPlaying = false;
+                this.musicPaused = false;
+                this.playbackRate = 1;
+                this.currentTime = 0;
+                this.duration = 180;
+
+                // Event handlers
+                this.onTrackStart = null;
+                this.onTrackEnd = null;
+                this.onLoadComplete = null;
+                this.onError = null;
+            }
+
+            async resumeAudioContext() {
+                this.isReady = true;
+                return Promise.resolve();
+            }
+
+            async suspendAudioContext() {
+                this.isReady = false;
+                return Promise.resolve();
+            }
+
+            isAudioReady() {
+                return this.isReady;
+            }
+
+            setMasterVolume(v) {
+                this.masterVolume = Math.max(0, Math.min(1, v));
+            }
+
+            getMasterVolume() {
+                return this.masterVolume;
+            }
+
+            setAudioVolume(group, v) {
+                if (this.groups[group]) {
+                    this.groups[group].volume = Math.max(0, Math.min(1, v));
+                }
+            }
+
+            setAudioEnabled(group, enabled) {
+                if (this.groups[group]) {
+                    this.groups[group].enabled = enabled;
+                }
+            }
+
+            addAudioTrack(key, group, path) {
+                console.log(`Added track: ${key} (${group}) - ${path}`);
+            }
+
+            playAudioTrack(key) {
+                const event = {
+                    key,
+                    channelId: `${key}_${Date.now()}`,
+                    group: 'sfx',
+                    src: `/sounds/${key}.wav`
+                };
+                if (this.onTrackStart) this.onTrackStart(event);
+                setTimeout(() => {
+                    if (this.onTrackEnd) this.onTrackEnd(event);
+                }, 500);
+            }
+
+            playContinuous(key, channel = 'default') {
+                this.musicPlaying = true;
+                this.musicPaused = false;
+                const event = {
+                    key,
+                    channelId: channel,
+                    group: 'music',
+                    src: `/music/${key}.mp3`
+                };
+                if (this.onLoadComplete) {
+                    this.onLoadComplete({ ...event, duration: this.duration });
+                }
+                if (this.onTrackStart) this.onTrackStart(event);
+            }
+
+            pauseContinuous() {
+                this.musicPlaying = false;
+                this.musicPaused = true;
+            }
+
+            resumeContinuous() {
+                if (this.musicPaused) {
+                    this.musicPlaying = true;
+                    this.musicPaused = false;
+                }
+            }
+
+            stopContinuous() {
+                this.musicPlaying = false;
+                this.musicPaused = false;
+            }
+
+            setPlaybackRate(rate) {
+                this.playbackRate = Math.max(0.25, Math.min(4, rate));
+            }
+
+            getPlaybackInfo() {
+                return {
+                    key: 'music',
+                    isPlaying: this.musicPlaying,
+                    isPaused: this.musicPaused,
+                    currentTime: this.currentTime,
+                    duration: this.duration,
+                    playbackRate: this.playbackRate,
+                    volume: this.groups.music.volume
+                };
+            }
+
+            getPoolStats(group) {
+                return {
+                    group,
+                    maxConcurrent: 8,
+                    totalPooled: 2,
+                    inUse: 2,
+                    available: 6
+                };
+            }
+
+            async fadeIn(key, duration) {
+                this.playContinuous(key);
+                return new Promise(r => setTimeout(r, duration));
+            }
+
+            async fadeOut(duration) {
+                return new Promise(r => {
+                    setTimeout(() => {
+                        this.stopContinuous();
+                        r();
+                    }, duration);
+                });
+            }
+
+            async crossFade(key, duration) {
+                const oldKey = 'music';
+                if (this.onTrackEnd) {
+                    this.onTrackEnd({ key: oldKey, channelId: 'default', group: 'music', src: '' });
+                }
+                return this.fadeIn(key, duration);
+            }
+
+            destroy() {
+                this.stopContinuous();
+                this.isReady = false;
+            }
+        }
+
+        // Create audio manager instance
+        const audio = new MockAudioManager();
+
+        // Register demo tracks
+        audio.addAudioTrack('explosion', 'sfx', '/sounds/explosion.wav');
+        audio.addAudioTrack('footstep', 'sfx', '/sounds/footstep1.wav');
+        audio.addAudioTrack('footstep', 'sfx', '/sounds/footstep2.wav');
+        audio.addAudioTrack('click', 'sfx', '/sounds/click.wav');
+        audio.addAudioTrack('music', 'music', '/music/theme.mp3');
+        audio.addAudioTrack('music2', 'music', '/music/battle.mp3');
+
+        // DOM elements
+        const initOverlay = document.getElementById('initOverlay');
+        const initBtn = document.getElementById('initBtn');
+        const contextStatus = document.getElementById('contextStatus');
+        const eventsLog = document.getElementById('eventsLog');
+
+        // Event logging
+        function logEvent(type, event) {
+            const div = document.createElement('div');
+            div.className = `event-item event-${type}`;
+            div.textContent = `[${type.toUpperCase()}] ${event.key} on ${event.channelId}`;
+            eventsLog.insertBefore(div, eventsLog.firstChild);
+        }
+
+        audio.onTrackStart = (e) => logEvent('start', e);
+        audio.onTrackEnd = (e) => logEvent('end', e);
+        audio.onLoadComplete = (e) => logEvent('load', { ...e, channelId: e.channelId + ` (${e.duration.toFixed(1)}s)` });
+        audio.onError = (e) => logEvent('error', e);
+
+        // Initialize audio
+        initBtn.onclick = async () => {
+            await audio.resumeAudioContext();
+            initOverlay.style.display = 'none';
+            updateContextStatus();
+        };
+
+        function updateContextStatus() {
+            const ready = audio.isAudioReady();
+            contextStatus.textContent = `Status: ${ready ? 'Running' : 'Suspended'} | Master: ${Math.round(audio.getMasterVolume() * 100)}%`;
+        }
+
+        // Context controls
+        document.getElementById('suspendBtn').onclick = async () => {
+            await audio.suspendAudioContext();
+            updateContextStatus();
+        };
+
+        document.getElementById('resumeBtn').onclick = async () => {
+            await audio.resumeAudioContext();
+            updateContextStatus();
+        };
+
+        // Volume controls
+        document.getElementById('masterVolume').oninput = (e) => {
+            const v = e.target.value / 100;
+            audio.setMasterVolume(v);
+            document.getElementById('masterVolumeValue').textContent = `${e.target.value}%`;
+            updateContextStatus();
+        };
+
+        document.getElementById('sfxVolume').oninput = (e) => {
+            const v = e.target.value / 100;
+            audio.setAudioVolume('sfx', v);
+            document.getElementById('sfxVolumeValue').textContent = `${e.target.value}%`;
+        };
+
+        document.getElementById('musicVolume').oninput = (e) => {
+            const v = e.target.value / 100;
+            audio.setAudioVolume('music', v);
+            document.getElementById('musicVolumeValue').textContent = `${e.target.value}%`;
+        };
+
+        document.getElementById('sfxEnabled').onchange = (e) => {
+            audio.setAudioEnabled('sfx', e.target.checked);
+        };
+
+        document.getElementById('musicEnabled').onchange = (e) => {
+            audio.setAudioEnabled('music', e.target.checked);
+        };
+
+        // One-shot playback
+        document.getElementById('playExplosion').onclick = () => {
+            audio.playAudioTrack('explosion');
+            updatePoolStats();
+        };
+
+        document.getElementById('playFootstep').onclick = () => {
+            audio.playAudioTrack('footstep');
+            updatePoolStats();
+        };
+
+        document.getElementById('playClick').onclick = () => {
+            audio.playAudioTrack('click');
+            updatePoolStats();
+        };
+
+        function updatePoolStats() {
+            const stats = audio.getPoolStats('sfx');
+            document.getElementById('poolStats').textContent =
+                `SFX Pool: ${stats.inUse}/${stats.maxConcurrent} in use, ${stats.available} available`;
+        }
+
+        // Continuous playback
+        document.getElementById('playMusic').onclick = () => {
+            audio.playContinuous('music');
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('pauseMusic').onclick = () => {
+            audio.pauseContinuous();
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('resumeMusic').onclick = () => {
+            audio.resumeContinuous();
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('stopMusic').onclick = () => {
+            audio.stopContinuous();
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('playbackRate').oninput = (e) => {
+            const rate = e.target.value / 100;
+            audio.setPlaybackRate(rate);
+            document.getElementById('playbackRateValue').textContent = `${rate.toFixed(2)}x`;
+            updatePlaybackInfo();
+        };
+
+        function updatePlaybackInfo() {
+            const info = audio.getPlaybackInfo();
+            document.getElementById('playbackInfo').textContent =
+                `Playing: ${info.isPlaying} | Paused: ${info.isPaused} | ` +
+                `Time: ${info.currentTime.toFixed(1)}/${info.duration}s | ` +
+                `Rate: ${info.playbackRate.toFixed(2)}x`;
+        }
+
+        // Fading
+        document.getElementById('fadeIn').onclick = async () => {
+            await audio.fadeIn('music', 2000);
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('fadeOut').onclick = async () => {
+            await audio.fadeOut(2000);
+            updatePlaybackInfo();
+        };
+
+        document.getElementById('crossFade').onclick = async () => {
+            await audio.crossFade('music2', 2000);
+            updatePlaybackInfo();
+        };
+
+        // Clear events
+        document.getElementById('clearEvents').onclick = () => {
+            eventsLog.innerHTML = '';
+        };
+
+        // Update displays periodically
+        setInterval(() => {
+            if (audio.musicPlaying) {
+                audio.currentTime = (audio.currentTime + 0.1) % audio.duration;
+            }
+            updatePlaybackInfo();
+        }, 100);
+    </script>
+</body>
+</html>
