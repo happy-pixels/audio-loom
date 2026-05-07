@@ -1986,6 +1986,39 @@ export class AudioManager {
     // ==================== Cleanup ====================
 
     /**
+     * Stops all active one-shot sounds in a specific group.
+     * This immediately stops and cleans up all playing sounds that belong to the specified group.
+     *
+     * @param group - The group key to stop all sounds for (e.g., 'sfx', 'ui', 'ambient')
+     *
+     * @example
+     * ```typescript
+     * // Stop all UI sounds when closing a menu
+     * audio.stopAudioGroup('ui');
+     *
+     * // Stop all SFX when pausing the game
+     * audio.stopAudioGroup('sfx');
+     * ```
+     */
+    stopAudioGroup(group: string): void {
+        const instances = this.activeSounds[group];
+        if (!instances || instances.length === 0) {
+            return;
+        }
+
+        for (const instance of instances) {
+            try {
+                instance.sourceNode.stop();
+                instance.sourceNode.disconnect();
+                instance.gainNode.disconnect();
+            } catch (error) {
+                this.logger.error(`Failed to stop sound "${instance.id}" in group "${group}"`, error);
+            }
+        }
+        this.activeSounds[group] = [];
+    }
+
+    /**
      * Destroys the AudioManager and releases all resources.
      * Stops all playback, disconnects all audio nodes, and closes the AudioContext.
      * After calling destroy(), the AudioManager instance should not be used.

@@ -612,6 +612,22 @@ export declare class AudioManager {
     private selectRandomTrack;
     private onTrackEnded;
     /**
+     * Stops all active one-shot sounds in a specific group.
+     * This immediately stops and cleans up all playing sounds that belong to the specified group.
+     *
+     * @param group - The group key to stop all sounds for (e.g., 'sfx', 'ui', 'ambient')
+     *
+     * @example
+     * ```typescript
+     * // Stop all UI sounds when closing a menu
+     * audio.stopAudioGroup('ui');
+     *
+     * // Stop all SFX when pausing the game
+     * audio.stopAudioGroup('sfx');
+     * ```
+     */
+    stopAudioGroup(group: string): void;
+    /**
      * Destroys the AudioManager and releases all resources.
      * Stops all playback, disconnects all audio nodes, and closes the AudioContext.
      * After calling destroy(), the AudioManager instance should not be used.
