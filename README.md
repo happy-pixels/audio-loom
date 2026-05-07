@@ -4,8 +4,6 @@ Audio Loom is a framework-agnostic audio management library built on the **Web A
 
 Works seamlessly with Phaser, Three.js, React, Angular, and other JavaScript frameworks.
 
-> **NOTICE:** This is not a production-ready library. There may be bugs, and breaking changes could occur in future updates. Use at your own risk.
-
 ## Installation
 
 ```bash
