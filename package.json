@@ -1,7 +1,7 @@
 {
   "name": "@happy-pixels/audio-loom",
-  "version": "0.1.3",
-  "description": "",
+  "version": "0.2.0",
+  "description": "Framework-agnostic audio management library built on the Web Audio API for games and interactive applications",
   "main": "dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -11,17 +11,48 @@
     }
   },
   "type": "module",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "docs": "typedoc",
+    "prepublishOnly": "pnpm run test:run && pnpm run build",
     "prepare": "pnpm run build"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "audio",
+    "sound",
+    "music",
+    "web-audio-api",
+    "game-audio",
+    "sound-effects",
+    "audio-manager",
+    "typescript",
+    "game-development"
+  ],
+  "author": "Happy Pixels",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/happy-pixels/audio-loom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/happy-pixels/audio-loom/issues"
+  },
+  "homepage": "https://github.com/happy-pixels/audio-loom#readme",
   "packageManager": "pnpm@10.20.0",
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "@vitest/coverage-v8": "^4.1.5",
+    "typedoc": "^0.28.19",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.5"
   },
   "dependencies": {
     "rxjs": "^7.8.2"

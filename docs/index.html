@@ -1,0 +1,272 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Audio Loom - v0.2.0</title><meta name="description" content="Documentation for Audio Loom"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">Audio Loom - v0.2.0</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>Audio Loom - v0.2.0</h1></div><div class="tsd-panel tsd-typography"><h1 id="audio-loom" class="tsd-anchor-link">Audio Loom<a href="#audio-loom" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Audio Loom is a framework-agnostic audio management library built on the <strong>Web Audio API</strong>. It provides centralized control for organizing, playing, and managing audio assets in games and interactive applications.</p>
+<p>Works seamlessly with Phaser, Three.js, React, Angular, and other JavaScript frameworks.</p>
+<blockquote>
+<p><strong>NOTICE:</strong> This is not a production-ready library. There may be bugs, and breaking changes could occur in future updates. Use at your own risk.</p>
+</blockquote>
+<h2 id="installation" class="tsd-anchor-link">Installation<a href="#installation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="bash"><span class="hl-0">npm</span><span class="hl-1"> </span><span class="hl-2">install</span><span class="hl-1"> </span><span class="hl-2">@happy-pixels/audio-loom</span><br/><span class="hl-3"># or</span><br/><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-2">add</span><span class="hl-1"> </span><span class="hl-2">@happy-pixels/audio-loom</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="quick-start" class="tsd-anchor-link">Quick Start<a href="#quick-start" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<pre><code class="typescript"><span class="hl-4">import</span><span class="hl-1"> { </span><span class="hl-5">AudioManager</span><span class="hl-1"> } </span><span class="hl-4">from</span><span class="hl-1"> </span><span class="hl-2">&#39;@happy-pixels/audio-loom&#39;</span><span class="hl-1">;</span><br/><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">audio</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">AudioManager</span><span class="hl-1">();</span><br/><br/><span class="hl-3">// Initialize on user interaction (required by browsers)</span><br/><span class="hl-5">document</span><span class="hl-1">.</span><span class="hl-0">getElementById</span><span class="hl-1">(</span><span class="hl-2">&#39;startButton&#39;</span><span class="hl-1">)!.</span><span class="hl-0">onclick</span><span class="hl-1"> = </span><span class="hl-6">async</span><span class="hl-1"> () </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">resumeAudioContext</span><span class="hl-1">();</span><br/><br/><span class="hl-1">  </span><span class="hl-3">// Now audio is ready to play!</span><br/><span class="hl-1">  </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;click&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-3">// Register sounds</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;click&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;ui&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/click.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/explosion.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/music/theme.mp3&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Preload for instant playback</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">preload</span><span class="hl-1">([</span><span class="hl-2">&#39;click&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">]);</span><br/><br/><span class="hl-3">// Play one-shot sound effects</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Play continuous background music</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playContinuous</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="features" class="tsd-anchor-link">Features<a href="#features" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="audio-grouping" class="tsd-anchor-link">Audio Grouping<a href="#audio-grouping" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Organize sounds into logical groups for independent volume and mute control:</p>
+<pre><code class="typescript"><span class="hl-3">// Register tracks in different groups</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/explosion.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/footstep.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/music/theme.mp3&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;rain&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;ambient&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/rain.mp3&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Control groups independently</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setAudioVolume</span><span class="hl-1">(</span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-8">0.8</span><span class="hl-1">);      </span><span class="hl-3">// SFX at 80%</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setAudioVolume</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-8">0.5</span><span class="hl-1">);    </span><span class="hl-3">// Music at 50%</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setAudioEnabled</span><span class="hl-1">(</span><span class="hl-2">&#39;ambient&#39;</span><span class="hl-1">, </span><span class="hl-6">false</span><span class="hl-1">); </span><span class="hl-3">// Mute ambient sounds</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="master-volume" class="tsd-anchor-link">Master Volume<a href="#master-volume" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Control overall audio output:</p>
+<pre><code class="typescript"><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setMasterVolume</span><span class="hl-1">(</span><span class="hl-8">0.7</span><span class="hl-1">);  </span><span class="hl-3">// Set master to 70%</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">volume</span><span class="hl-1"> = </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">getMasterVolume</span><span class="hl-1">();</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="sound-variations" class="tsd-anchor-link">Sound Variations<a href="#sound-variations" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Register multiple tracks under the same key for natural variation:</p>
+<pre><code class="typescript"><span class="hl-3">// Add multiple footstep sounds</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/footstep1.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/footstep2.wav&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">addAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;/sounds/footstep3.wav&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Each play selects randomly (shuffled, no repeats until all played)</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="preloading" class="tsd-anchor-link">Preloading<a href="#preloading" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Preload audio for instant, low-latency playback:</p>
+<pre><code class="typescript"><span class="hl-3">// Check loading status</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">status</span><span class="hl-1"> = </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">getLoadStatus</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Loaded </span><span class="hl-6">${</span><span class="hl-5">status</span><span class="hl-9">.</span><span class="hl-5">loaded</span><span class="hl-6">}</span><span class="hl-2">/</span><span class="hl-6">${</span><span class="hl-5">status</span><span class="hl-9">.</span><span class="hl-5">total</span><span class="hl-6">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Preload specific keys</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">preload</span><span class="hl-1">([</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;gunshot&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;footstep&#39;</span><span class="hl-1">]);</span><br/><br/><span class="hl-3">// Check if ready</span><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">isLoaded</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">)) {</span><br/><span class="hl-1">  </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="one-shot-playback-sfx" class="tsd-anchor-link">One-Shot Playback (SFX)<a href="#one-shot-playback-sfx" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Play sound effects that run to completion:</p>
+<pre><code class="typescript"><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;explosion&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;gunshot&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Pool limits prevent too many concurrent sounds</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setGroupPoolSize</span><span class="hl-1">(</span><span class="hl-2">&#39;sfx&#39;</span><span class="hl-1">, </span><span class="hl-8">8</span><span class="hl-1">);  </span><span class="hl-3">// Max 8 simultaneous SFX</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="continuous-playback-musicambient" class="tsd-anchor-link">Continuous Playback (Music/Ambient)<a href="#continuous-playback-musicambient" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Play looping audio with full control:</p>
+<pre><code class="typescript"><span class="hl-3">// Start background music</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playContinuous</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Pause/resume</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">pauseContinuous</span><span class="hl-1">();</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">resumeContinuous</span><span class="hl-1">();</span><br/><br/><span class="hl-3">// Stop</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">stopContinuous</span><span class="hl-1">();</span><br/><br/><span class="hl-3">// Multiple channels for layered audio</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playContinuous</span><span class="hl-1">(</span><span class="hl-2">&#39;music&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;music-channel&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playContinuous</span><span class="hl-1">(</span><span class="hl-2">&#39;rain&#39;</span><span class="hl-1">, </span><span class="hl-2">&#39;ambient-channel&#39;</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Control channels independently</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">pauseContinuous</span><span class="hl-1">(</span><span class="hl-2">&#39;ambient-channel&#39;</span><span class="hl-1">);</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setPlaybackRate</span><span class="hl-1">(</span><span class="hl-8">0.8</span><span class="hl-1">, </span><span class="hl-2">&#39;music-channel&#39;</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="fading" class="tsd-anchor-link">Fading<a href="#fading" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Smooth volume transitions using Web Audio API:</p>
+<pre><code class="typescript"><span class="hl-3">// Fade in new music over 2 seconds</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">fadeIn</span><span class="hl-1">(</span><span class="hl-2">&#39;battle-music&#39;</span><span class="hl-1">, </span><span class="hl-8">2000</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Fade out over 1.5 seconds</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">fadeOut</span><span class="hl-1">(</span><span class="hl-8">1500</span><span class="hl-1">);</span><br/><br/><span class="hl-3">// Cross-fade to new track (simultaneous fade out/in)</span><br/><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">crossFade</span><span class="hl-1">(</span><span class="hl-2">&#39;victory-music&#39;</span><span class="hl-1">, </span><span class="hl-8">2000</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="playback-controls" class="tsd-anchor-link">Playback Controls<a href="#playback-controls" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Fine-grained control over continuous playback:</p>
+<pre><code class="typescript"><span class="hl-3">// Playback rate (speed/pitch)</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setPlaybackRate</span><span class="hl-1">(</span><span class="hl-8">1.5</span><span class="hl-1">);  </span><span class="hl-3">// 1.5x speed</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">setPlaybackRate</span><span class="hl-1">(</span><span class="hl-8">0.5</span><span class="hl-1">);  </span><span class="hl-3">// Half speed</span><br/><br/><span class="hl-3">// Seeking</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">seek</span><span class="hl-1">(</span><span class="hl-8">30</span><span class="hl-1">);  </span><span class="hl-3">// Jump to 30 seconds</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">currentTime</span><span class="hl-1"> = </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">getCurrentTime</span><span class="hl-1">();</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">duration</span><span class="hl-1"> = </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">getDuration</span><span class="hl-1">();</span><br/><br/><span class="hl-3">// Get full playback info</span><br/><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">info</span><span class="hl-1"> = </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">getPlaybackInfo</span><span class="hl-1">();</span><br/><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`</span><span class="hl-6">${</span><span class="hl-5">info</span><span class="hl-9">.</span><span class="hl-5">currentTime</span><span class="hl-6">}</span><span class="hl-2">/</span><span class="hl-6">${</span><span class="hl-5">info</span><span class="hl-9">.</span><span class="hl-5">duration</span><span class="hl-6">}</span><span class="hl-2">s at </span><span class="hl-6">${</span><span class="hl-5">info</span><span class="hl-9">.</span><span class="hl-5">playbackRate</span><span class="hl-6">}</span><span class="hl-2">x`</span><span class="hl-1">);</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="event-system" class="tsd-anchor-link">Event System<a href="#event-system" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>React to audio events using RxJS observables:</p>
+<pre><code class="typescript"><span class="hl-3">// Track starts</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-5">onTrackStart$</span><span class="hl-1">.</span><span class="hl-0">subscribe</span><span class="hl-1">(</span><span class="hl-5">event</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Playing: </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">key</span><span class="hl-6">}</span><span class="hl-2"> on </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">channelId</span><span class="hl-6">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-3">// Track ends</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-5">onTrackEnd$</span><span class="hl-1">.</span><span class="hl-0">subscribe</span><span class="hl-1">(</span><span class="hl-5">event</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Finished: </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">key</span><span class="hl-6">}</span><span class="hl-2">`</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-3">// Track loaded</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-5">onLoadComplete$</span><span class="hl-1">.</span><span class="hl-0">subscribe</span><span class="hl-1">(</span><span class="hl-5">event</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">log</span><span class="hl-1">(</span><span class="hl-2">`Loaded: </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">key</span><span class="hl-6">}</span><span class="hl-2">, duration: </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">duration</span><span class="hl-6">}</span><span class="hl-2">s`</span><span class="hl-1">);</span><br/><span class="hl-1">});</span><br/><br/><span class="hl-3">// Errors</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-5">onError$</span><span class="hl-1">.</span><span class="hl-0">subscribe</span><span class="hl-1">(</span><span class="hl-5">event</span><span class="hl-1"> </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-5">console</span><span class="hl-1">.</span><span class="hl-0">error</span><span class="hl-1">(</span><span class="hl-2">`Error: </span><span class="hl-6">${</span><span class="hl-5">event</span><span class="hl-9">.</span><span class="hl-5">message</span><span class="hl-6">}</span><span class="hl-2">`</span><span class="hl-1">, </span><span class="hl-5">event</span><span class="hl-1">.</span><span class="hl-5">error</span><span class="hl-1">);</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="audiocontext-management" class="tsd-anchor-link">AudioContext Management<a href="#audiocontext-management" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Handle browser autoplay restrictions:</p>
+<pre><code class="typescript"><span class="hl-3">// Initialize on user interaction</span><br/><span class="hl-5">button</span><span class="hl-1">.</span><span class="hl-0">onclick</span><span class="hl-1"> = </span><span class="hl-6">async</span><span class="hl-1"> () </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">resumeAudioContext</span><span class="hl-1">();</span><br/><span class="hl-1">};</span><br/><br/><span class="hl-3">// Check if ready</span><br/><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">isAudioReady</span><span class="hl-1">()) {</span><br/><span class="hl-1">  </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">playAudioTrack</span><span class="hl-1">(</span><span class="hl-2">&#39;click&#39;</span><span class="hl-1">);</span><br/><span class="hl-1">}</span><br/><br/><span class="hl-3">// Suspend when app is in background</span><br/><span class="hl-5">document</span><span class="hl-1">.</span><span class="hl-0">addEventListener</span><span class="hl-1">(</span><span class="hl-2">&#39;visibilitychange&#39;</span><span class="hl-1">, </span><span class="hl-6">async</span><span class="hl-1"> () </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-4">if</span><span class="hl-1"> (</span><span class="hl-5">document</span><span class="hl-1">.</span><span class="hl-5">hidden</span><span class="hl-1">) {</span><br/><span class="hl-1">    </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">suspendAudioContext</span><span class="hl-1">();</span><br/><span class="hl-1">  } </span><span class="hl-4">else</span><span class="hl-1"> {</span><br/><span class="hl-1">    </span><span class="hl-4">await</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">resumeAudioContext</span><span class="hl-1">();</span><br/><span class="hl-1">  }</span><br/><span class="hl-1">});</span>
+</code><button type="button">Copy</button></pre>
+
+<h3 id="cleanup" class="tsd-anchor-link">Cleanup<a href="#cleanup" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Properly dispose of resources:</p>
+<pre><code class="typescript"><span class="hl-3">// Stop all and release resources</span><br/><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">destroy</span><span class="hl-1">();</span><br/><br/><span class="hl-3">// React example</span><br/><span class="hl-0">useEffect</span><span class="hl-1">(() </span><span class="hl-6">=&gt;</span><span class="hl-1"> {</span><br/><span class="hl-1">  </span><span class="hl-6">const</span><span class="hl-1"> </span><span class="hl-7">audio</span><span class="hl-1"> = </span><span class="hl-6">new</span><span class="hl-1"> </span><span class="hl-0">AudioManager</span><span class="hl-1">();</span><br/><span class="hl-1">  </span><span class="hl-4">return</span><span class="hl-1"> () </span><span class="hl-6">=&gt;</span><span class="hl-1"> </span><span class="hl-5">audio</span><span class="hl-1">.</span><span class="hl-0">destroy</span><span class="hl-1">();</span><br/><span class="hl-1">}, []);</span>
+</code><button type="button">Copy</button></pre>
+
+<h2 id="api-reference" class="tsd-anchor-link">API Reference<a href="#api-reference" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="audiomanager" class="tsd-anchor-link">AudioManager<a href="#audiomanager" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>initAudio()</code></td>
+<td>Initialize AudioContext</td>
+</tr>
+<tr>
+<td><code>resumeAudioContext()</code></td>
+<td>Resume suspended context</td>
+</tr>
+<tr>
+<td><code>suspendAudioContext()</code></td>
+<td>Suspend context</td>
+</tr>
+<tr>
+<td><code>isAudioReady()</code></td>
+<td>Check if context is running</td>
+</tr>
+<tr>
+<td><code>setMasterVolume(volume)</code></td>
+<td>Set master volume (0-1)</td>
+</tr>
+<tr>
+<td><code>getMasterVolume()</code></td>
+<td>Get master volume</td>
+</tr>
+<tr>
+<td><code>setAudioEnabled(group, enabled)</code></td>
+<td>Enable/disable group</td>
+</tr>
+<tr>
+<td><code>setAudioVolume(group, volume)</code></td>
+<td>Set group volume</td>
+</tr>
+<tr>
+<td><code>setGroupPoolSize(group, max)</code></td>
+<td>Set concurrent sound limit</td>
+</tr>
+<tr>
+<td><code>addAudioTrack(key, group, path)</code></td>
+<td>Register a track</td>
+</tr>
+<tr>
+<td><code>preload(keys)</code></td>
+<td>Preload tracks</td>
+</tr>
+<tr>
+<td><code>isLoaded(key)</code></td>
+<td>Check if loaded</td>
+</tr>
+<tr>
+<td><code>getLoadStatus(key)</code></td>
+<td>Get loading progress</td>
+</tr>
+<tr>
+<td><code>playAudioTrack(key)</code></td>
+<td>Play one-shot sound</td>
+</tr>
+<tr>
+<td><code>playContinuous(key, channel?)</code></td>
+<td>Start continuous playback</td>
+</tr>
+<tr>
+<td><code>stopContinuous(channel?)</code></td>
+<td>Stop continuous playback</td>
+</tr>
+<tr>
+<td><code>pauseContinuous(channel?)</code></td>
+<td>Pause playback</td>
+</tr>
+<tr>
+<td><code>resumeContinuous(channel?)</code></td>
+<td>Resume playback</td>
+</tr>
+<tr>
+<td><code>fadeIn(key, duration, channel?)</code></td>
+<td>Fade in new track</td>
+</tr>
+<tr>
+<td><code>fadeOut(duration, channel?)</code></td>
+<td>Fade out current track</td>
+</tr>
+<tr>
+<td><code>crossFade(key, duration, channel?)</code></td>
+<td>Cross-fade to new track</td>
+</tr>
+<tr>
+<td><code>setPlaybackRate(rate, channel?)</code></td>
+<td>Set playback speed</td>
+</tr>
+<tr>
+<td><code>seek(time, channel?)</code></td>
+<td>Seek to position</td>
+</tr>
+<tr>
+<td><code>getCurrentTime(channel?)</code></td>
+<td>Get current position</td>
+</tr>
+<tr>
+<td><code>getDuration(channel?)</code></td>
+<td>Get track duration</td>
+</tr>
+<tr>
+<td><code>getPlaybackInfo(channel?)</code></td>
+<td>Get full playback info</td>
+</tr>
+<tr>
+<td><code>getActiveChannels()</code></td>
+<td>Get all active channels</td>
+</tr>
+<tr>
+<td><code>getChannelInfo(channel?)</code></td>
+<td>Get channel info</td>
+</tr>
+<tr>
+<td><code>stopAllContinuous()</code></td>
+<td>Stop all channels</td>
+</tr>
+<tr>
+<td><code>pauseAllContinuous()</code></td>
+<td>Pause all channels</td>
+</tr>
+<tr>
+<td><code>resumeAllContinuous()</code></td>
+<td>Resume all channels</td>
+</tr>
+<tr>
+<td><code>destroy()</code></td>
+<td>Clean up resources</td>
+</tr>
+</tbody>
+</table>
+<h3 id="observables" class="tsd-anchor-link">Observables<a href="#observables" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<table>
+<thead>
+<tr>
+<th>Observable</th>
+<th>Event Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>onTrackStart$</code></td>
+<td><code>TrackStartEvent</code></td>
+<td>Track started playing</td>
+</tr>
+<tr>
+<td><code>onTrackEnd$</code></td>
+<td><code>TrackEndEvent</code></td>
+<td>Track finished</td>
+</tr>
+<tr>
+<td><code>onLoadComplete$</code></td>
+<td><code>LoadCompleteEvent</code></td>
+<td>Track metadata loaded</td>
+</tr>
+<tr>
+<td><code>onError$</code></td>
+<td><code>AudioErrorEvent</code></td>
+<td>Error occurred</td>
+</tr>
+</tbody>
+</table>
+<h2 id="documentation" class="tsd-anchor-link">Documentation<a href="#documentation" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Full API documentation is available in the <code>docs/</code> folder and can be hosted via GitHub Pages.</p>
+<p><strong>Generate documentation:</strong></p>
+<pre><code class="bash"><span class="hl-0">pnpm</span><span class="hl-1"> </span><span class="hl-2">docs</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>Enable GitHub Pages:</strong></p>
+<ol>
+<li>Push the repository to GitHub</li>
+<li>Go to your repository on GitHub</li>
+<li>Navigate to <strong>Settings</strong> → <strong>Pages</strong></li>
+<li>Under &quot;Build and deployment&quot;:
+<ul>
+<li>Source: <strong>Deploy from a branch</strong></li>
+<li>Branch: <strong>main</strong></li>
+<li>Folder: <strong>/docs</strong></li>
+</ul>
+</li>
+<li>Click <strong>Save</strong></li>
+<li>After a few minutes, docs will be live at <code>https://[username].github.io/[repo-name]/</code></li>
+</ol>
+<h2 id="tech-stack" class="tsd-anchor-link">Tech Stack<a href="#tech-stack" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>TypeScript</strong> - Type-safe API</li>
+<li><strong>Web Audio API</strong> - Low-latency audio with gain control</li>
+<li><strong>RxJS</strong> - Reactive event handling</li>
+</ul>
+<h2 id="license" class="tsd-anchor-link">License<a href="#license" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>ISC</p>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#audio-loom"><span>Audio <wbr/>Loom</span></a><ul><li><a href="#installation"><span>Installation</span></a></li><li><a href="#quick-start"><span>Quick <wbr/>Start</span></a></li><li><a href="#features"><span>Features</span></a></li><li><ul><li><a href="#audio-grouping"><span>Audio <wbr/>Grouping</span></a></li><li><a href="#master-volume"><span>Master <wbr/>Volume</span></a></li><li><a href="#sound-variations"><span>Sound <wbr/>Variations</span></a></li><li><a href="#preloading"><span>Preloading</span></a></li><li><a href="#one-shot-playback-sfx"><span>One-<wbr/>Shot <wbr/>Playback (<wbr/>SFX)</span></a></li><li><a href="#continuous-playback-musicambient"><span>Continuous <wbr/>Playback (<wbr/>Music/<wbr/>Ambient)</span></a></li><li><a href="#fading"><span>Fading</span></a></li><li><a href="#playback-controls"><span>Playback <wbr/>Controls</span></a></li><li><a href="#event-system"><span>Event <wbr/>System</span></a></li><li><a href="#audiocontext-management"><span>Audio<wbr/>Context <wbr/>Management</span></a></li><li><a href="#cleanup"><span>Cleanup</span></a></li></ul></li><li><a href="#api-reference"><span>API <wbr/>Reference</span></a></li><li><ul><li><a href="#audiomanager"><span>Audio<wbr/>Manager</span></a></li><li><a href="#observables"><span>Observables</span></a></li></ul></li><li><a href="#documentation"><span>Documentation</span></a></li><li><a href="#tech-stack"><span>Tech <wbr/>Stack</span></a></li><li><a href="#license"><span>License</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">Audio Loom - v0.2.0</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
