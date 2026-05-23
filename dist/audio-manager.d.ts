@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { LoadStatus, ChannelInfo, PlaybackInfo, TrackStartEvent, TrackEndEvent, LoadCompleteEvent, AudioErrorEvent, PoolStats } from './types';
+import { LoadStatus, ChannelInfo, PlaybackInfo, TrackStartEvent, TrackEndEvent, LoadCompleteEvent, AudioErrorEvent, PositionUpdateEvent, OrientationUpdateEvent, DistanceThresholdEvent, PoolStats, FilterConfig, EnvironmentPreset, EnvironmentConfig, Vector3, SpatialConfig, Play3DOptions, Play2DPannedOptions, DistanceCallbackConfig } from './types';
 /**
  * AudioManager is a framework-agnostic audio management system built on the Web Audio API.
  * It provides centralized control for organizing, playing, and managing audio assets in
@@ -25,624 +25,393 @@ import { LoadStatus, ChannelInfo, PlaybackInfo, TrackStartEvent, TrackEndEvent, 
  * ```
  */
 export declare class AudioManager {
-    private settings;
-    private tracks;
-    private trackSelector;
-    private logger;
-    private audioContext;
-    private masterGain;
-    private groupGains;
-    private audioBuffers;
-    private activeSounds;
-    private masterVolume;
-    private channels;
-    private channelSubjects;
-    private fadeStates;
-    private poolConfigs;
-    private trackStartSubject;
-    private trackEndSubject;
-    private loadCompleteSubject;
-    private errorSubject;
+    private readonly logger;
+    private readonly events;
+    private readonly contextManager;
+    private readonly groupManager;
+    private readonly trackManager;
+    private readonly audioLoader;
+    private readonly impulseLoader;
+    private readonly oneShotPlayer;
+    private readonly continuousPlayer;
+    private readonly fadeManager;
+    private readonly playbackControls;
+    private readonly effectsBus;
+    private readonly environmentManager;
+    private readonly listenerManager;
+    private readonly pannerFactory;
+    private readonly spatialPlayer;
+    private readonly stereoPanner;
     /**
      * Observable that emits when a track starts playing.
-     * @example
-     * ```typescript
-     * audio.onTrackStart$.subscribe(event => {
-     *   console.log(`Playing: ${event.key} on channel ${event.channelId}`);
-     * });
-     * ```
      */
     readonly onTrackStart$: Observable<TrackStartEvent>;
     /**
      * Observable that emits when a track finishes playing.
-     * @example
-     * ```typescript
-     * audio.onTrackEnd$.subscribe(event => {
-     *   console.log(`Finished: ${event.key}`);
-     * });
-     * ```
      */
     readonly onTrackEnd$: Observable<TrackEndEvent>;
     /**
      * Observable that emits when a track's metadata is loaded and ready to play.
-     * @example
-     * ```typescript
-     * audio.onLoadComplete$.subscribe(event => {
-     *   console.log(`Loaded: ${event.key}, duration: ${event.duration}s`);
-     * });
-     * ```
      */
     readonly onLoadComplete$: Observable<LoadCompleteEvent>;
     /**
      * Observable that emits when an audio error occurs.
-     * @example
-     * ```typescript
-     * audio.onError$.subscribe(event => {
-     *   console.error(`Audio error: ${event.message}`, event.error);
-     * });
-     * ```
      */
     readonly onError$: Observable<AudioErrorEvent>;
     /**
+     * Observable that emits when a 3D sound's position is updated.
+     */
+    readonly onPositionUpdate$: Observable<PositionUpdateEvent>;
+    /**
+     * Observable that emits when a 3D sound's orientation is updated.
+     */
+    readonly onOrientationUpdate$: Observable<OrientationUpdateEvent>;
+    /**
+     * Observable that emits when a 3D sound crosses a distance threshold.
+     */
+    readonly onDistanceThreshold$: Observable<DistanceThresholdEvent>;
+    /**
      * Gets or sets whether debug logging is enabled.
-     * When enabled, the AudioManager logs internal operations to the console.
-     * @default false
      */
     get loggingEnabled(): boolean;
     set loggingEnabled(value: boolean);
     /**
      * Creates a new AudioManager instance.
-     * The AudioContext is created lazily on first use or via {@link initAudio}.
      */
     constructor();
-    private ensureAudioContext;
-    private ensureGroupGain;
     /**
      * Initializes the AudioContext and resumes it if suspended.
-     * Call this method on user interaction to ensure audio playback works in browsers.
-     *
-     * @returns A promise that resolves when the AudioContext is ready.
-     * @example
-     * ```typescript
-     * document.getElementById('startButton').onclick = async () => {
-     *   await audio.initAudio();
-     *   console.log('Audio ready!');
-     * };
-     * ```
      */
     initAudio(): Promise<void>;
     /**
      * Resumes a suspended AudioContext.
-     * Browsers require user interaction before allowing audio playback.
-     * Call this method in response to a user gesture (click, touch, keypress).
-     *
-     * @returns A promise that resolves when the AudioContext is resumed.
-     * @example
-     * ```typescript
-     * playButton.onclick = async () => {
-     *   await audio.resumeAudioContext();
-     *   audio.playAudioTrack('click');
-     * };
-     * ```
      */
     resumeAudioContext(): Promise<void>;
     /**
-     * Suspends the AudioContext to save resources when audio is not needed.
-     * Useful for pausing all audio when the application loses focus or enters background.
-     *
-     * @returns A promise that resolves when the AudioContext is suspended.
-     * @example
-     * ```typescript
-     * document.addEventListener('visibilitychange', async () => {
-     *   if (document.hidden) {
-     *     await audio.suspendAudioContext();
-     *   } else {
-     *     await audio.resumeAudioContext();
-     *   }
-     * });
-     * ```
+     * Suspends the AudioContext to save resources.
      */
     suspendAudioContext(): Promise<void>;
     /**
      * Checks if the AudioContext is initialized and running.
-     *
-     * @returns `true` if the AudioContext is ready for playback, `false` otherwise.
-     * @example
-     * ```typescript
-     * if (!audio.isAudioReady()) {
-     *   showMessage('Click to enable audio');
-     * }
-     * ```
      */
     isAudioReady(): boolean;
     /**
      * Sets the master volume that affects all audio output.
-     * The value is clamped to the range [0, 1].
-     *
-     * @param volume - The master volume level (0 = silent, 1 = full volume).
-     * @example
-     * ```typescript
-     * // Set master volume to 50%
-     * audio.setMasterVolume(0.5);
-     *
-     * // Mute all audio
-     * audio.setMasterVolume(0);
-     * ```
      */
     setMasterVolume(volume: number): void;
     /**
      * Gets the current master volume level.
-     *
-     * @returns The master volume level (0-1).
-     * @example
-     * ```typescript
-     * const volume = audio.getMasterVolume();
-     * volumeSlider.value = volume * 100;
-     * ```
      */
     getMasterVolume(): number;
     /**
      * Enables or disables audio playback for a specific group.
-     * When disabled, all sounds in the group are muted and continuous playback is paused.
-     *
-     * @param group - The audio group name (e.g., 'sfx', 'music', 'ambient').
-     * @param enabled - Whether the group should be enabled.
-     * @example
-     * ```typescript
-     * // Mute sound effects
-     * audio.setAudioEnabled('sfx', false);
-     *
-     * // Re-enable sound effects
-     * audio.setAudioEnabled('sfx', true);
-     * ```
      */
     setAudioEnabled(group: string, enabled: boolean): void;
     /**
      * Sets the volume for a specific audio group.
-     * The value is clamped to the range [0, 1].
-     *
-     * @param group - The audio group name (e.g., 'sfx', 'music', 'ambient').
-     * @param volume - The volume level (0 = silent, 1 = full volume).
-     * @example
-     * ```typescript
-     * // Set music volume to 70%
-     * audio.setAudioVolume('music', 0.7);
-     *
-     * // Set SFX volume from a slider
-     * audio.setAudioVolume('sfx', sfxSlider.value / 100);
-     * ```
      */
     setAudioVolume(group: string, volume: number): void;
     /**
      * Sets the maximum number of concurrent sounds for a group.
-     * When the limit is reached, new sounds in the group will not play.
-     *
-     * @param group - The audio group name.
-     * @param maxConcurrent - Maximum number of simultaneous sounds (minimum: 1).
-     * @example
-     * ```typescript
-     * // Allow up to 4 concurrent footstep sounds
-     * audio.setGroupPoolSize('sfx', 4);
-     *
-     * // Allow more sounds for ambient group
-     * audio.setGroupPoolSize('ambient', 16);
-     * ```
      */
     setGroupPoolSize(group: string, maxConcurrent: number): void;
     /**
      * Gets statistics about the audio pool for one or all groups.
-     *
-     * @param group - Optional group name. If omitted, returns stats for all groups.
-     * @returns Pool statistics for the specified group, or an array of stats for all groups.
-     * @example
-     * ```typescript
-     * // Get stats for a specific group
-     * const sfxStats = audio.getPoolStats('sfx');
-     * console.log(`SFX: ${sfxStats.inUse}/${sfxStats.maxConcurrent} in use`);
-     *
-     * // Get stats for all groups
-     * const allStats = audio.getPoolStats();
-     * allStats.forEach(stats => console.log(stats.group, stats.inUse));
-     * ```
      */
     getPoolStats(group?: string): PoolStats | PoolStats[];
-    private getGroupPoolStats;
-    private loadAudioBuffer;
     /**
      * Checks if all tracks for a key are fully loaded and ready to play.
-     *
-     * @param key - The audio key to check.
-     * @returns `true` if all tracks for the key are loaded, `false` otherwise.
-     * @example
-     * ```typescript
-     * if (audio.isLoaded('explosion')) {
-     *   audio.playAudioTrack('explosion');
-     * } else {
-     *   await audio.preload(['explosion']);
-     * }
-     * ```
      */
     isLoaded(key: string): boolean;
     /**
      * Gets detailed loading status for a specific audio key.
-     *
-     * @param key - The audio key to check.
-     * @returns An object with total tracks, loaded count, and ready status.
-     * @example
-     * ```typescript
-     * const status = audio.getLoadStatus('footsteps');
-     * console.log(`Loaded ${status.loaded}/${status.total} tracks`);
-     * if (status.ready) {
-     *   console.log('All footstep sounds ready!');
-     * }
-     * ```
      */
     getLoadStatus(key: string): LoadStatus;
     /**
      * Preloads audio tracks into memory for low-latency playback.
-     * This is especially important for one-shot sounds (SFX) that need instant playback.
-     *
-     * @param keys - Array of audio keys to preload.
-     * @returns A promise that resolves when all tracks are loaded.
-     * @throws If any track fails to load.
-     * @example
-     * ```typescript
-     * // Preload during a loading screen
-     * async function loadGame() {
-     *   showLoadingScreen();
-     *   await audio.preload(['explosion', 'gunshot', 'footstep', 'jump']);
-     *   hideLoadingScreen();
-     * }
-     *
-     * // Track loading progress
-     * audio.preload(['music1', 'music2']).then(() => {
-     *   console.log('All music loaded');
-     * });
-     * ```
      */
     preload(keys: string[]): Promise<void>;
     /**
      * Registers an audio track with the manager.
-     * Multiple tracks can be registered under the same key for random variation.
-     *
-     * @param key - Unique identifier for the sound (e.g., 'explosion', 'footstep').
-     * @param group - Audio group for volume/mute control (e.g., 'sfx', 'music').
-     * @param path - URL or path to the audio file.
-     * @example
-     * ```typescript
-     * // Add a single sound effect
-     * audio.addAudioTrack('explosion', 'sfx', '/sounds/explosion.wav');
-     *
-     * // Add multiple variations for the same key (random selection on play)
-     * audio.addAudioTrack('footstep', 'sfx', '/sounds/footstep1.wav');
-     * audio.addAudioTrack('footstep', 'sfx', '/sounds/footstep2.wav');
-     * audio.addAudioTrack('footstep', 'sfx', '/sounds/footstep3.wav');
-     *
-     * // Add background music
-     * audio.addAudioTrack('battle', 'music', '/music/battle-theme.mp3');
-     * ```
      */
     addAudioTrack(key: string, group: string, path: string): void;
     /**
      * Plays a one-shot sound effect.
-     * If multiple tracks are registered under the key, one is selected randomly.
-     * The sound plays to completion and cannot be stopped or paused.
-     *
-     * @param key - The audio key to play.
-     * @example
-     * ```typescript
-     * // Play a sound effect
-     * audio.playAudioTrack('explosion');
-     *
-     * // Play footstep (random variation if multiple tracks registered)
-     * audio.playAudioTrack('footstep');
-     *
-     * // Rapid fire - respects pool limits
-     * for (let i = 0; i < 10; i++) {
-     *   audio.playAudioTrack('gunshot');
-     * }
-     * ```
      */
     playAudioTrack(key: string): void;
-    private loadAndPlayOneShot;
-    private playOneShotWithBuffer;
     /**
      * Starts continuous playback on a channel.
-     * When a track ends, the next track is automatically played (looping through all tracks).
-     * Ideal for background music, ambient sounds, or any audio that should loop.
-     *
-     * @param key - The audio key to play.
-     * @param channelId - Optional channel identifier (default: 'default').
-     *                    Use different channels for simultaneous playback (e.g., music + ambient).
-     * @example
-     * ```typescript
-     * // Play background music on default channel
-     * audio.playContinuous('battle-music');
-     *
-     * // Play ambient sounds on a separate channel
-     * audio.playContinuous('forest-ambient', 'ambient');
-     *
-     * // Both play simultaneously and can be controlled independently
-     * audio.pauseContinuous('ambient');  // Pause only ambient
-     * audio.stopContinuous();            // Stop only default channel
-     * ```
      */
     playContinuous(key: string, channelId?: string): void;
     /**
-     * Stops continuous playback on a channel and resets to the beginning.
-     *
-     * @param channelId - The channel to stop (default: 'default').
-     * @example
-     * ```typescript
-     * // Stop the default channel
-     * audio.stopContinuous();
-     *
-     * // Stop a specific channel
-     * audio.stopContinuous('ambient');
-     * ```
+     * Stops continuous playback on a channel.
      */
     stopContinuous(channelId?: string): void;
     /**
      * Pauses continuous playback on a channel.
-     * The playback position is preserved and can be resumed with {@link resumeContinuous}.
-     *
-     * @param channelId - The channel to pause (default: 'default').
-     * @example
-     * ```typescript
-     * // Pause when game is paused
-     * audio.pauseContinuous();
-     *
-     * // Pause ambient channel only
-     * audio.pauseContinuous('ambient');
-     * ```
      */
     pauseContinuous(channelId?: string): void;
     /**
      * Resumes paused continuous playback on a channel.
-     *
-     * @param channelId - The channel to resume (default: 'default').
-     * @example
-     * ```typescript
-     * // Resume when game is unpaused
-     * audio.resumeContinuous();
-     *
-     * // Resume ambient channel only
-     * audio.resumeContinuous('ambient');
-     * ```
      */
     resumeContinuous(channelId?: string): void;
     /**
      * Starts playback with a gradual volume fade-in effect.
-     * Uses the Web Audio API's native gain automation for smooth transitions.
-     *
-     * @param key - The audio key to play.
-     * @param duration - Fade duration in milliseconds.
-     * @param channelId - The channel to use (default: 'default').
-     * @returns A promise that resolves when the fade-in completes.
-     * @example
-     * ```typescript
-     * // Fade in background music over 2 seconds
-     * await audio.fadeIn('battle-music', 2000);
-     *
-     * // Fade in on a specific channel
-     * await audio.fadeIn('ambient', 3000, 'ambient');
-     * ```
      */
     fadeIn(key: string, duration: number, channelId?: string): Promise<void>;
     /**
      * Gradually fades out and stops the current playback on a channel.
-     * Uses the Web Audio API's native gain automation for smooth transitions.
-     *
-     * @param duration - Fade duration in milliseconds.
-     * @param channelId - The channel to fade out (default: 'default').
-     * @returns A promise that resolves when the fade-out completes and playback stops.
-     * @example
-     * ```typescript
-     * // Fade out current music over 1.5 seconds
-     * await audio.fadeOut(1500);
-     *
-     * // Fade out ambient sounds
-     * await audio.fadeOut(2000, 'ambient');
-     * ```
      */
     fadeOut(duration: number, channelId?: string): Promise<void>;
     /**
-     * Cross-fades from the current track to a new track on the same channel.
-     * The old track fades out while the new track fades in simultaneously.
-     *
-     * @param key - The audio key of the new track to play.
-     * @param duration - Cross-fade duration in milliseconds.
-     * @param channelId - The channel to cross-fade on (default: 'default').
-     * @returns A promise that resolves when the cross-fade completes.
-     * @example
-     * ```typescript
-     * // Cross-fade to a new music track
-     * await audio.crossFade('boss-music', 2000);
-     *
-     * // Seamless transition between ambient tracks
-     * await audio.crossFade('cave-ambient', 3000, 'ambient');
-     * ```
+     * Cross-fades from the current track to a new track.
      */
     crossFade(key: string, duration: number, channelId?: string): Promise<void>;
     /**
      * Gets information about all active continuous playback channels.
-     *
-     * @returns An object mapping channel IDs to their playback info.
-     * @example
-     * ```typescript
-     * const channels = audio.getActiveChannels();
-     * Object.entries(channels).forEach(([id, info]) => {
-     *   console.log(`Channel ${id}: ${info.key} (playing: ${info.isPlaying})`);
-     * });
-     * ```
      */
     getActiveChannels(): {
         [channelId: string]: ChannelInfo;
     };
     /**
      * Gets information about a specific playback channel.
-     *
-     * @param channelId - The channel to query (default: 'default').
-     * @returns Channel info if active, or `null` if no playback on channel.
-     * @example
-     * ```typescript
-     * const info = audio.getChannelInfo('music');
-     * if (info?.isPlaying) {
-     *   console.log(`Now playing: ${info.key}`);
-     * }
-     * ```
      */
     getChannelInfo(channelId?: string): ChannelInfo | null;
     /**
      * Stops all continuous playback on all channels.
-     *
-     * @example
-     * ```typescript
-     * // Stop all music/ambient when leaving a scene
-     * audio.stopAllContinuous();
-     * ```
      */
     stopAllContinuous(): void;
     /**
      * Pauses all continuous playback on all channels.
-     *
-     * @example
-     * ```typescript
-     * // Pause everything when game is paused
-     * audio.pauseAllContinuous();
-     * ```
      */
     pauseAllContinuous(): void;
     /**
      * Resumes all paused continuous playback on all channels.
-     *
-     * @example
-     * ```typescript
-     * // Resume everything when game is unpaused
-     * audio.resumeAllContinuous();
-     * ```
      */
     resumeAllContinuous(): void;
     /**
      * Sets the playback speed/rate for a channel.
-     * The value is clamped to the range [0.25, 4.0].
-     *
-     * @param rate - Playback rate (1.0 = normal, 0.5 = half speed, 2.0 = double speed).
-     * @param channelId - The channel to modify (default: 'default').
-     * @example
-     * ```typescript
-     * // Slow motion music effect
-     * audio.setPlaybackRate(0.5);
-     *
-     * // Fast forward
-     * audio.setPlaybackRate(2.0);
-     *
-     * // Reset to normal
-     * audio.setPlaybackRate(1.0);
-     * ```
      */
     setPlaybackRate(rate: number, channelId?: string): void;
     /**
      * Gets the current playback rate for a channel.
-     *
-     * @param channelId - The channel to query (default: 'default').
-     * @returns The playback rate, or `null` if no playback on channel.
      */
     getPlaybackRate(channelId?: string): number | null;
     /**
      * Seeks to a specific time position in the current track.
-     *
-     * @param time - Time position in seconds.
-     * @param channelId - The channel to seek (default: 'default').
-     * @example
-     * ```typescript
-     * // Skip to 1 minute into the track
-     * audio.seek(60);
-     *
-     * // Restart from beginning
-     * audio.seek(0);
-     * ```
      */
     seek(time: number, channelId?: string): void;
     /**
      * Gets the current playback time in seconds.
-     *
-     * @param channelId - The channel to query (default: 'default').
-     * @returns Current time in seconds, or `null` if no playback on channel.
-     * @example
-     * ```typescript
-     * const time = audio.getCurrentTime();
-     * if (time !== null) {
-     *   progressBar.value = time;
-     * }
-     * ```
      */
     getCurrentTime(channelId?: string): number | null;
     /**
      * Gets the total duration of the current track in seconds.
-     *
-     * @param channelId - The channel to query (default: 'default').
-     * @returns Duration in seconds, or `null` if unavailable.
-     * @example
-     * ```typescript
-     * const duration = audio.getDuration();
-     * if (duration !== null) {
-     *   console.log(`Track length: ${duration}s`);
-     * }
-     * ```
      */
     getDuration(channelId?: string): number | null;
     /**
      * Gets comprehensive playback information for a channel.
-     *
-     * @param channelId - The channel to query (default: 'default').
-     * @returns Playback info including time, duration, rate, and volume.
-     * @example
-     * ```typescript
-     * const info = audio.getPlaybackInfo();
-     * if (info) {
-     *   console.log(`Playing: ${info.key}`);
-     *   console.log(`Progress: ${info.currentTime}/${info.duration}s`);
-     *   console.log(`Rate: ${info.playbackRate}x, Volume: ${info.volume}`);
-     * }
-     * ```
      */
     getPlaybackInfo(channelId?: string): PlaybackInfo | null;
-    private cancelFade;
-    private selectRandomTrack;
-    private onTrackEnded;
+    /**
+     * Registers an impulse response for use with convolution reverb.
+     */
+    addImpulseResponse(key: string, path: string): void;
+    /**
+     * Preloads impulse response files into memory.
+     */
+    preloadImpulses(keys: string[]): Promise<void>;
+    /**
+     * Checks if an impulse response is fully loaded and ready for use.
+     */
+    isImpulseLoaded(key: string): boolean;
+    /**
+     * Sets the wet/dry mix for the effects bus.
+     */
+    setEffectsMix(wet: number): void;
+    /**
+     * Gets the current wet/dry mix for the effects bus.
+     */
+    getEffectsMix(): number;
+    /**
+     * Applies a reverb effect using a loaded impulse response.
+     */
+    setEffectsReverb(key: string | null): Promise<void>;
+    /**
+     * Gets the key of the currently active reverb impulse response.
+     */
+    getActiveReverb(): string | null;
+    /**
+     * Sets the low-pass filter parameters for the effects bus.
+     */
+    setEffectsLowPass(frequency: number, Q?: number): void;
+    /**
+     * Gets the current low-pass filter configuration.
+     */
+    getEffectsLowPass(): FilterConfig | null;
+    /**
+     * Sets the high-pass filter parameters for the effects bus.
+     */
+    setEffectsHighPass(frequency: number, Q?: number): void;
+    /**
+     * Gets the current high-pass filter configuration.
+     */
+    getEffectsHighPass(): FilterConfig | null;
+    /**
+     * Checks if the effects bus has been initialized.
+     */
+    isEffectsBusInitialized(): boolean;
+    /**
+     * Gets comprehensive state information about the effects bus.
+     */
+    getEffectsBusState(): {
+        initialized: boolean;
+        wetMix: number;
+        activeReverb: string | null;
+        lowPass: FilterConfig | null;
+        highPass: FilterConfig | null;
+        registeredImpulses: string[];
+    };
+    /**
+     * Applies an environment configuration or preset.
+     */
+    setEnvironment(config: EnvironmentConfig | EnvironmentPreset | null): Promise<void>;
+    /**
+     * Gets the currently active environment configuration.
+     */
+    getEnvironment(): EnvironmentConfig | null;
+    /**
+     * Smoothly transitions to a new environment over time.
+     */
+    transitionToEnvironment(config: EnvironmentConfig | EnvironmentPreset | null, duration: number): Promise<void>;
+    /**
+     * Sets whether a group should bypass the effects bus.
+     */
+    setGroupBypassEffects(group: string, bypass: boolean): void;
+    /**
+     * Checks if a group is currently bypassing the effects bus.
+     */
+    isGroupBypassingEffects(group: string): boolean;
+    /**
+     * Gets a list of all groups that are currently bypassing effects.
+     */
+    getBypassedGroups(): string[];
+    /**
+     * Sets the position of the audio listener.
+     */
+    setListenerPosition(position: Vector3): void;
+    /**
+     * Gets the current listener position.
+     */
+    getListenerPosition(): Vector3;
+    /**
+     * Sets the orientation of the audio listener.
+     */
+    setListenerOrientation(forward: Vector3, up: Vector3): void;
+    /**
+     * Gets the current listener orientation.
+     */
+    getListenerOrientation(): {
+        forward: Vector3;
+        up: Vector3;
+    };
+    /**
+     * Sets the default spatial configuration used for new 3D sounds.
+     */
+    setSpatialDefaults(config: Partial<SpatialConfig>): void;
+    /**
+     * Gets the current default spatial configuration.
+     */
+    getSpatialDefaults(): SpatialConfig;
+    /**
+     * Gets comprehensive state information about the spatial audio system.
+     */
+    getSpatialState(): {
+        listenerPosition: Vector3;
+        listenerOrientation: {
+            forward: Vector3;
+            up: Vector3;
+        };
+        defaults: SpatialConfig;
+    };
+    /**
+     * Plays a one-shot sound at a specific position in 3D space.
+     */
+    play3D(key: string, position: Vector3, options?: Play3DOptions): string | null;
+    /**
+     * Plays continuous audio at a specific position in 3D space.
+     */
+    playContinuous3D(key: string, position: Vector3, channelId?: string, options?: Play3DOptions): Promise<void>;
+    /**
+     * Updates the position of a playing 3D sound (one-shot).
+     */
+    updateSoundPosition(instanceId: string, position: Vector3): boolean;
+    /**
+     * Updates the position of a continuous 3D channel.
+     */
+    updateChannelPosition(channelId: string, position: Vector3): boolean;
+    /**
+     * Checks if a sound instance is a 3D positioned sound.
+     */
+    is3DSound(instanceId: string): boolean;
+    /**
+     * Checks if a channel is a 3D positioned channel.
+     */
+    is3DChannel(channelId: string): boolean;
+    /**
+     * Gets the current position of a 3D sound.
+     */
+    getSoundPosition(instanceId: string): Vector3 | null;
+    /**
+     * Gets the current position of a 3D channel.
+     */
+    getChannelPosition(channelId: string): Vector3 | null;
+    /**
+     * Sets the orientation of a playing 3D sound (one-shot).
+     */
+    setSoundOrientation(instanceId: string, orientation: Vector3): boolean;
+    /**
+     * Sets the orientation of a continuous 3D channel.
+     */
+    setChannelOrientation(channelId: string, orientation: Vector3): boolean;
+    /**
+     * Gets the current orientation of a 3D sound.
+     */
+    getSoundOrientation(instanceId: string): Vector3 | null;
+    /**
+     * Gets the current orientation of a 3D channel.
+     */
+    getChannelOrientation(channelId: string): Vector3 | null;
+    /**
+     * Plays a one-shot sound with stereo panning.
+     */
+    play2DPanned(key: string, options?: Play2DPannedOptions): string | null;
+    /**
+     * Updates the stereo pan position of a playing 2D panned sound.
+     */
+    setPan(instanceId: string, pan: number): boolean;
+    /**
+     * Gets the current pan position of a 2D panned sound.
+     */
+    getSoundPan(instanceId: string): number | null;
+    /**
+     * Checks if a sound instance is a 2D panned sound.
+     */
+    is2DPannedSound(instanceId: string): boolean;
+    /**
+     * Registers distance callbacks for a 3D sound.
+     */
+    registerDistanceCallback(instanceId: string, config: DistanceCallbackConfig): boolean;
+    /**
+     * Unregisters distance callbacks for a sound.
+     */
+    unregisterDistanceCallback(instanceId: string): boolean;
     /**
      * Stops all active one-shot sounds in a specific group.
-     * This immediately stops and cleans up all playing sounds that belong to the specified group.
-     *
-     * @param group - The group key to stop all sounds for (e.g., 'sfx', 'ui', 'ambient')
-     *
-     * @example
-     * ```typescript
-     * // Stop all UI sounds when closing a menu
-     * audio.stopAudioGroup('ui');
-     *
-     * // Stop all SFX when pausing the game
-     * audio.stopAudioGroup('sfx');
-     * ```
      */
     stopAudioGroup(group: string): void;
     /**
      * Destroys the AudioManager and releases all resources.
-     * Stops all playback, disconnects all audio nodes, and closes the AudioContext.
-     * After calling destroy(), the AudioManager instance should not be used.
-     *
-     * @example
-     * ```typescript
-     * // Clean up when leaving a game or unmounting a component
-     * audio.destroy();
-     *
-     * // React useEffect cleanup
-     * useEffect(() => {
-     *   const audio = new AudioManager();
-     *   return () => audio.destroy();
-     * }, []);
-     * ```
      */
     destroy(): void;
 }

@@ -238,9 +238,246 @@ useEffect(() => {
 }, []);
 ```
 
+## 3D Spatial Audio
+
+Audio Loom provides a complete 3D spatial audio system using the Web Audio API's PannerNode and AudioListener.
+
+### Listener Setup
+
+Position your listener (usually the player/camera) in 3D space:
+
+```typescript
+// Set listener position
+audio.setListenerPosition({ x: 0, y: 1.7, z: 0 }); // Player at origin, ear height
+
+// Set listener orientation (forward and up vectors)
+audio.setListenerOrientation(
+  { x: 0, y: 0, z: -1 },  // Looking forward (-Z)
+  { x: 0, y: 1, z: 0 }    // Y is up
+);
+
+// Convenience: use vec3 helper
+import { vec3 } from '@happy-pixels/audio-loom';
+audio.setListenerPosition(vec3(10, 0, -5));
+```
+
+### 3D One-Shot Sounds
+
+Play positioned sound effects:
+
+```typescript
+audio.addAudioTrack('explosion', 'sfx', '/sounds/explosion.wav');
+await audio.preload(['explosion']);
+
+// Play at position
+const instanceId = audio.play3D('explosion', { x: 10, y: 0, z: -5 });
+
+// With options
+const id = audio.play3D('explosion', { x: 10, y: 0, z: -5 }, {
+  volume: 0.8,
+  spatialConfig: {
+    maxDistance: 100,
+    rolloffFactor: 1.5,
+    distanceModel: 'inverse'
+  }
+});
+
+// Update position for moving sounds
+audio.updateSoundPosition(instanceId, { x: 12, y: 0, z: -3 });
+```
+
+### 3D Continuous Sounds
+
+Play positioned looping audio:
+
+```typescript
+audio.addAudioTrack('fire', 'ambient', '/sounds/fire.wav');
+
+// Play at position with channel ID
+await audio.playContinuous3D('fire', { x: 5, y: 0, z: -10 }, 'campfire');
+
+// Update position
+audio.updateChannelPosition('campfire', { x: 6, y: 0, z: -10 });
+
+// Check if channel is 3D
+if (audio.is3DChannel('campfire')) {
+  const pos = audio.getChannelPosition('campfire');
+}
+```
+
+### Spatial Configuration
+
+Configure default spatial settings:
+
+```typescript
+import { SPATIAL_PRESET_INDOOR, SPATIAL_PRESET_OUTDOOR } from '@happy-pixels/audio-loom';
+
+// Set defaults for all 3D sounds
+audio.setSpatialDefaults({
+  distanceModel: 'inverse',  // 'linear', 'inverse', 'exponential'
+  panningModel: 'HRTF',      // 'HRTF' for headphones, 'equalpower' for speakers
+  refDistance: 1,
+  maxDistance: 100,
+  rolloffFactor: 1
+});
+
+// Use presets
+audio.setSpatialDefaults(SPATIAL_PRESET_INDOOR);  // Smaller space
+audio.setSpatialDefaults(SPATIAL_PRESET_OUTDOOR); // Larger space
+```
+
+### Directional Audio
+
+Create cone-shaped sound sources (speakers, spotlights):
+
+```typescript
+const id = audio.play3D('announcement', { x: 0, y: 2, z: 5 }, {
+  orientation: { x: 0, y: 0, z: -1 },  // Pointing forward
+  spatialConfig: {
+    cone: {
+      innerAngle: 60,    // Full volume cone
+      outerAngle: 120,   // Attenuated cone
+      outerGain: 0.2     // Volume outside outer cone
+    }
+  }
+});
+
+// Update orientation
+audio.setSoundOrientation(id, { x: 1, y: 0, z: 0 }); // Point right
+```
+
+### Stereo Panning (2D Alternative)
+
+Lightweight left/right panning without full 3D:
+
+```typescript
+// Play with stereo pan (-1 = left, 0 = center, 1 = right)
+const id = audio.play2DPanned('footstep', { pan: -0.5, volume: 0.8 });
+
+// Update pan position
+audio.setPan(id, 0.3);
+
+// Check pan value
+const pan = audio.getSoundPan(id); // Returns -0.5
+```
+
+### Distance Callbacks
+
+React when sounds cross distance thresholds (useful for LOD audio):
+
+```typescript
+const id = audio.play3D('enemy', { x: 100, y: 0, z: 0 });
+
+audio.registerDistanceCallback(id, {
+  thresholds: [10, 25, 50],
+  onThresholdCross: (instanceId, distance, threshold, direction) => {
+    console.log(`Sound ${instanceId} ${direction} ${threshold}m threshold`);
+    if (threshold === 10 && direction === 'entering') {
+      // Enemy is close! Play alert
+    }
+  },
+  checkInterval: 100 // ms between checks
+});
+
+// Unregister when done
+audio.unregisterDistanceCallback(id);
+```
+
+## Environment Effects
+
+Apply reverb and filtering effects to simulate acoustic environments.
+
+### Effects Bus Setup
+
+The effects bus creates parallel wet/dry signal paths:
+
+```typescript
+// Register impulse response files for reverb
+audio.addImpulseResponse('hall', '/impulses/hall.wav');
+audio.addImpulseResponse('cave', '/impulses/cave.wav');
+
+// Preload impulse responses
+await audio.preloadImpulses(['hall', 'cave']);
+
+// Apply reverb
+await audio.setEffectsReverb('hall');
+
+// Set wet/dry mix (0 = dry, 1 = fully wet)
+audio.setEffectsMix(0.3);
+
+// Apply filters
+audio.setEffectsLowPass(4000, 1);   // Frequency, Q
+audio.setEffectsHighPass(200, 1);
+```
+
+### Environment Presets
+
+Use built-in presets or create custom environments:
+
+```typescript
+import { ENVIRONMENT_PRESETS } from '@happy-pixels/audio-loom';
+
+// Apply preset
+await audio.setEnvironment('cave');    // Heavy reverb, muffled
+await audio.setEnvironment('forest');  // Light reverb, natural
+await audio.setEnvironment('underwater'); // Heavy low-pass
+await audio.setEnvironment('indoor');
+await audio.setEnvironment('none');    // Clear all effects
+
+// Custom environment
+await audio.setEnvironment({
+  reverb: 'hall',           // Impulse response key
+  wetMix: 0.4,
+  lowPass: { frequency: 6000, Q: 1 },
+  highPass: { frequency: 80, Q: 0.7 }
+});
+```
+
+### Environment Transitions
+
+Smoothly transition between environments:
+
+```typescript
+// Transition over 2 seconds
+await audio.transitionToEnvironment('cave', 2000);
+
+// Transition to no effects
+await audio.transitionToEnvironment('none', 1000);
+```
+
+### Per-Group Bypass
+
+Keep certain audio groups unaffected by effects:
+
+```typescript
+// UI sounds bypass reverb (stay crisp)
+audio.setGroupBypassEffects('ui', true);
+
+// Dialog stays clear
+audio.setGroupBypassEffects('dialog', true);
+
+// Check bypass status
+const bypassed = audio.getBypassedGroups(); // ['ui', 'dialog']
+```
+
+### Impulse Response Guidelines
+
+For best results with reverb:
+
+1. **Format**: Use WAV or MP3 files (44.1kHz or 48kHz recommended)
+2. **Length**: 1-5 seconds for typical rooms, longer for large spaces
+3. **Sources**: Record real spaces or use convolution reverb IRs
+4. **File Size**: Keep files small for fast loading (< 500KB ideal)
+
+Free impulse response sources:
+- [OpenAir](https://www.openair.hosted.york.ac.uk/)
+- [EchoThief](http://www.echothief.com/)
+
 ## API Reference
 
 ### AudioManager
+
+#### Core Methods
 
 | Method | Description |
 |--------|-------------|
@@ -277,6 +514,55 @@ useEffect(() => {
 | `resumeAllContinuous()` | Resume all channels |
 | `destroy()` | Clean up resources |
 
+#### 3D Spatial Audio Methods
+
+| Method | Description |
+|--------|-------------|
+| `setListenerPosition(position)` | Set listener position in 3D space |
+| `getListenerPosition()` | Get current listener position |
+| `setListenerOrientation(forward, up)` | Set listener direction |
+| `getListenerOrientation()` | Get listener orientation vectors |
+| `setSpatialDefaults(config)` | Set default spatial config |
+| `getSpatialDefaults()` | Get current spatial defaults |
+| `play3D(key, position, options?)` | Play 3D positioned sound |
+| `playContinuous3D(key, position, channel?, options?)` | Play 3D looping sound |
+| `updateSoundPosition(id, position)` | Update one-shot sound position |
+| `updateChannelPosition(channel, position)` | Update channel position |
+| `is3DSound(instanceId)` | Check if sound is 3D |
+| `is3DChannel(channelId)` | Check if channel is 3D |
+| `getSoundPosition(instanceId)` | Get sound position |
+| `getChannelPosition(channelId)` | Get channel position |
+| `setSoundOrientation(id, forward)` | Set directional sound orientation |
+| `setChannelOrientation(channel, forward)` | Set channel orientation |
+| `play2DPanned(key, options?)` | Play with stereo panning |
+| `setPan(instanceId, pan)` | Update stereo pan (-1 to 1) |
+| `getSoundPan(instanceId)` | Get current pan value |
+| `registerDistanceCallback(id, config)` | Register distance threshold callback |
+| `unregisterDistanceCallback(id)` | Remove distance callback |
+
+#### Environment Effects Methods
+
+| Method | Description |
+|--------|-------------|
+| `addImpulseResponse(key, path)` | Register impulse response file |
+| `preloadImpulses(keys)` | Preload impulse responses |
+| `isImpulseLoaded(key)` | Check if impulse is loaded |
+| `setEffectsReverb(key)` | Apply reverb (or null to disable) |
+| `getActiveReverb()` | Get current reverb key |
+| `setEffectsMix(wet)` | Set wet/dry mix (0-1) |
+| `getEffectsMix()` | Get current wet/dry mix |
+| `setEffectsLowPass(frequency, Q?)` | Set low-pass filter |
+| `getEffectsLowPass()` | Get low-pass settings |
+| `setEffectsHighPass(frequency, Q?)` | Set high-pass filter |
+| `getEffectsHighPass()` | Get high-pass settings |
+| `setEnvironment(preset\|config)` | Apply environment preset or config |
+| `getEnvironment()` | Get current environment |
+| `transitionToEnvironment(preset, duration)` | Smooth environment transition |
+| `setGroupBypassEffects(group, bypass)` | Bypass effects for group |
+| `isGroupBypassingEffects(group)` | Check if group bypasses effects |
+| `getBypassedGroups()` | Get list of bypassed groups |
+| `getEffectsBusState()` | Get full effects bus state |
+
 ### Observables
 
 | Observable | Event Type | Description |
@@ -285,6 +571,9 @@ useEffect(() => {
 | `onTrackEnd$` | `TrackEndEvent` | Track finished |
 | `onLoadComplete$` | `LoadCompleteEvent` | Track metadata loaded |
 | `onError$` | `AudioErrorEvent` | Error occurred |
+| `onPositionUpdate$` | `PositionUpdateEvent` | 3D sound position changed |
+| `onOrientationUpdate$` | `OrientationUpdateEvent` | Sound orientation changed |
+| `onDistanceThreshold$` | `DistanceThresholdEvent` | Distance threshold crossed |
 
 ## Documentation
 

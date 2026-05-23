@@ -85,6 +85,94 @@ class MockMediaElementAudioSourceNode extends MockAudioNode {
     }
 }
 
+// Mock ConvolverNode
+class MockConvolverNode extends MockAudioNode {
+    buffer: AudioBuffer | null = null;
+    normalize: boolean = true;
+}
+
+// Mock BiquadFilterNode
+class MockBiquadFilterNode extends MockAudioNode {
+    type: BiquadFilterType = 'lowpass';
+    frequency: MockAudioParam = new MockAudioParam();
+    Q: MockAudioParam = new MockAudioParam();
+    gain: MockAudioParam = new MockAudioParam();
+    detune: MockAudioParam = new MockAudioParam();
+
+    constructor() {
+        super();
+        this.frequency.value = 350;
+        this.frequency.defaultValue = 350;
+        this.frequency.minValue = 0;
+        this.frequency.maxValue = 24000;
+        this.Q.value = 1;
+        this.Q.defaultValue = 1;
+        this.Q.minValue = 0.0001;
+        this.Q.maxValue = 1000;
+    }
+
+    getFrequencyResponse(
+        _frequencyArray: Float32Array,
+        _magResponseOutput: Float32Array,
+        _phaseResponseOutput: Float32Array
+    ): void {}
+}
+
+// Mock PannerNode
+class MockPannerNode extends MockAudioNode {
+    positionX: MockAudioParam = new MockAudioParam();
+    positionY: MockAudioParam = new MockAudioParam();
+    positionZ: MockAudioParam = new MockAudioParam();
+    orientationX: MockAudioParam = new MockAudioParam();
+    orientationY: MockAudioParam = new MockAudioParam();
+    orientationZ: MockAudioParam = new MockAudioParam();
+
+    distanceModel: DistanceModelType = 'inverse';
+    panningModel: PanningModelType = 'HRTF';
+    refDistance: number = 1;
+    maxDistance: number = 10000;
+    rolloffFactor: number = 1;
+    coneInnerAngle: number = 360;
+    coneOuterAngle: number = 360;
+    coneOuterGain: number = 0;
+
+    constructor() {
+        super();
+        this.positionX.value = 0;
+        this.positionY.value = 0;
+        this.positionZ.value = 0;
+        this.orientationX.value = 1;
+        this.orientationY.value = 0;
+        this.orientationZ.value = 0;
+    }
+
+    // Deprecated methods for fallback
+    setPosition(x: number, y: number, z: number): void {
+        this.positionX.value = x;
+        this.positionY.value = y;
+        this.positionZ.value = z;
+    }
+
+    setOrientation(x: number, y: number, z: number): void {
+        this.orientationX.value = x;
+        this.orientationY.value = y;
+        this.orientationZ.value = z;
+    }
+}
+
+// Mock StereoPannerNode
+class MockStereoPannerNode extends MockAudioNode {
+    pan: MockAudioParam = new MockAudioParam();
+
+    constructor() {
+        super();
+        this.pan.value = 0;
+        this.pan.defaultValue = 0;
+        this.pan.minValue = -1;
+        this.pan.maxValue = 1;
+    }
+}
+
 // Mock AudioDestinationNode
 class MockAudioDestinationNode extends MockAudioNode {
     maxChannelCount: number = 2;
@@ -112,12 +200,58 @@ class MockAudioBuffer {
     copyToChannel(_source: Float32Array, _channelNumber: number, _bufferOffset?: number): void {}
 }
 
+// Mock AudioListener
+class MockAudioListener {
+    positionX: MockAudioParam = new MockAudioParam();
+    positionY: MockAudioParam = new MockAudioParam();
+    positionZ: MockAudioParam = new MockAudioParam();
+    forwardX: MockAudioParam = new MockAudioParam();
+    forwardY: MockAudioParam = new MockAudioParam();
+    forwardZ: MockAudioParam = new MockAudioParam();
+    upX: MockAudioParam = new MockAudioParam();
+    upY: MockAudioParam = new MockAudioParam();
+    upZ: MockAudioParam = new MockAudioParam();
+
+    constructor() {
+        // Initialize with default orientation (facing -Z, up is +Y)
+        this.positionX.value = 0;
+        this.positionY.value = 0;
+        this.positionZ.value = 0;
+        this.forwardX.value = 0;
+        this.forwardY.value = 0;
+        this.forwardZ.value = -1;
+        this.upX.value = 0;
+        this.upY.value = 1;
+        this.upZ.value = 0;
+    }
+
+    // Deprecated methods for older browser fallback
+    setPosition(x: number, y: number, z: number): void {
+        this.positionX.value = x;
+        this.positionY.value = y;
+        this.positionZ.value = z;
+    }
+
+    setOrientation(
+        forwardX: number, forwardY: number, forwardZ: number,
+        upX: number, upY: number, upZ: number
+    ): void {
+        this.forwardX.value = forwardX;
+        this.forwardY.value = forwardY;
+        this.forwardZ.value = forwardZ;
+        this.upX.value = upX;
+        this.upY.value = upY;
+        this.upZ.value = upZ;
+    }
+}
+
 // Mock AudioContext
 class MockAudioContext {
     state: AudioContextState = 'running';
     currentTime: number = 0;
     sampleRate: number = 44100;
     destination: MockAudioDestinationNode = new MockAudioDestinationNode();
+    listener: MockAudioListener = new MockAudioListener();
 
     private intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -138,6 +272,22 @@ class MockAudioContext {
 
     createMediaElementSource(mediaElement: HTMLMediaElement): MockMediaElementAudioSourceNode {
         return new MockMediaElementAudioSourceNode(mediaElement);
+    }
+
+    createConvolver(): MockConvolverNode {
+        return new MockConvolverNode();
+    }
+
+    createBiquadFilter(): MockBiquadFilterNode {
+        return new MockBiquadFilterNode();
+    }
+
+    createPanner(): MockPannerNode {
+        return new MockPannerNode();
+    }
+
+    createStereoPanner(): MockStereoPannerNode {
+        return new MockStereoPannerNode();
     }
 
     async decodeAudioData(audioData: ArrayBuffer): Promise<MockAudioBuffer> {
@@ -254,6 +404,11 @@ export {
     MockAudioNode,
     MockAudioBufferSourceNode,
     MockMediaElementAudioSourceNode,
+    MockConvolverNode,
+    MockBiquadFilterNode,
+    MockPannerNode,
+    MockStereoPannerNode,
+    MockAudioListener,
     MockAudioBuffer,
     MockHTMLAudioElement,
     mockFetch
