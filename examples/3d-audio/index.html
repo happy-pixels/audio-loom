@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Loom — 3D Audio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #0f0f1a;
+      color: #e0e0e0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    canvas { display: block; }
+
+    #hud {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .hud-card {
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(0, 217, 255, 0.2);
+      border-radius: 8px;
+      padding: 12px 16px;
+      min-width: 200px;
+    }
+
+    .hud-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #00d9ff;
+      margin-bottom: 6px;
+    }
+
+    .stat { font-size: 13px; color: #ccc; margin: 3px 0; }
+    .stat span { color: #fff; font-weight: 600; }
+
+    .row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    label { font-size: 12px; color: #aaa; white-space: nowrap; }
+    input[type="range"] { width: 100px; accent-color: #00d9ff; }
+
+    #keys {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 12px;
+      color: #888;
+      letter-spacing: 0.04em;
+      z-index: 10;
+    }
+    #keys kbd {
+      background: #1a1a2e;
+      border: 1px solid #444;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: 11px;
+      color: #00d9ff;
+    }
+
+    .hud-card button {
+      width: 100%;
+      background: rgba(0, 217, 255, 0.1);
+      color: #00d9ff;
+      border: 1px solid rgba(0, 217, 255, 0.4);
+      border-radius: 5px;
+      padding: 7px 12px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .hud-card button:hover   { background: rgba(0, 217, 255, 0.25); }
+    .hud-card button.active  { background: #00d9ff; color: #000; font-weight: 600; }
+
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    #overlay button {
+      font-size: 20px; padding: 16px 36px;
+      background: #00d9ff; color: #000;
+      border: none; border-radius: 6px; cursor: pointer;
+    }
+    #overlay button:hover { background: #00b8d9; }
+  </style>
+</head>
+<body>
+
+  <div id="overlay">
+    <button id="startBtn">Click to Enable Audio</button>
+  </div>
+
+  <div id="hud">
+    <div class="hud-card">
+      <div class="hud-label">Position</div>
+      <div class="stat">Distance: <span id="statDist">--</span></div>
+      <div class="stat">X offset: <span id="statX">--</span></div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Hum Volume</div>
+      <div class="row">
+        <input type="range" id="humVol" min="0" max="100" value="80">
+        <label id="humVolVal">80%</label>
+      </div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">Environment</div>
+      <button id="caveToggle">Cave Reverb: OFF</button>
+    </div>
+  </div>
+
+  <div id="keys">
+    <kbd>W</kbd> closer &nbsp; <kbd>S</kbd> further &nbsp; <kbd>A</kbd> left &nbsp; <kbd>D</kbd> right
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "rxjs": "https://esm.sh/rxjs@7.8.2",
+      "rxjs/operators": "https://esm.sh/rxjs@7.8.2/operators",
+      "three": "https://esm.sh/three@0.176.0",
+      "three/addons/": "https://esm.sh/three@0.176.0/examples/jsm/",
+      "audio-loom": "../dist/index.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { AudioManager } from 'audio-loom';
+
+    // ── Audio setup ────────────────────────────────────────────────────────────
+
+    const audio = new AudioManager();
+
+    audio.addAudioTrack('hum', 'ambient', './sounds/hum.mp3');
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      await audio.initAudio();
+
+      // Generate and register the cave IR so setEnvironment('cave') has a buffer to load
+      const caveIRUrl = await createCaveIR();
+      audio.addImpulseResponse('cave', caveIRUrl);
+
+      audio.setSpatialDefaults({
+        distanceModel: 'inverse',
+        panningModel: 'HRTF',
+        refDistance: 4,
+        maxDistance: 20,
+        rolloffFactor: 1.5
+      });
+
+      // Hum is positioned at the origin, where the model sits
+      await audio.playContinuous3D('hum', { x: 0, y: 0, z: 0 }, 'hum-channel');
+
+      document.getElementById('overlay').style.display = 'none';
+    });
+
+    document.getElementById('humVol').addEventListener('input', (e) => {
+      audio.setAudioVolume('ambient', e.target.value / 100);
+      document.getElementById('humVolVal').textContent = `${e.target.value}%`;
+    });
+
+    audio.onError$.subscribe(e => console.error('[AudioLoom]', e.message));
+
+    // ── Cave impulse response ──────────────────────────────────────────────────
+    //
+    // Generates a synthetic cave IR (brown noise + exponential decay) so the
+    // example is self-contained. Swap in a real IR file via addImpulseResponse
+    // if you have one.
+
+    function bufferToWav(buffer) {
+      const numCh = buffer.numberOfChannels;
+      const sr    = buffer.sampleRate;
+      const len   = buffer.length;
+      const dataLen = len * numCh * 2;
+      const ab = new ArrayBuffer(44 + dataLen);
+      const v  = new DataView(ab);
+      const str = (off, s) => [...s].forEach((c, i) => v.setUint8(off + i, c.charCodeAt(0)));
+      str(0, 'RIFF'); v.setUint32(4, 36 + dataLen, true);
+      str(8, 'WAVE'); str(12, 'fmt ');
+      v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+      v.setUint16(22, numCh, true); v.setUint32(24, sr, true);
+      v.setUint32(28, sr * numCh * 2, true); v.setUint16(32, numCh * 2, true);
+      v.setUint16(34, 16, true); str(36, 'data'); v.setUint32(40, dataLen, true);
+      let off = 44;
+      for (let i = 0; i < len; i++) {
+        for (let ch = 0; ch < numCh; ch++) {
+          const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
+          v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+          off += 2;
+        }
+      }
+      return ab;
+    }
+
+    async function createCaveIR() {
+      const sr = 44100, dur = 2.8;
+      const len = Math.floor(sr * dur);
+      const ctx = new OfflineAudioContext(2, len, sr);
+      const noise = ctx.createBuffer(2, len, sr);
+      for (let ch = 0; ch < 2; ch++) {
+        const d = noise.getChannelData(ch);
+        let b = 0;
+        for (let i = 0; i < len; i++) {
+          b = (b + 0.02 * (Math.random() * 2 - 1)) / 1.02;
+          d[i] = b * 3.5 * Math.pow(0.001, i / len);
+        }
+      }
+      const src = ctx.createBufferSource();
+      src.buffer = noise;
+      src.connect(ctx.destination);
+      src.start(0.02);
+      const rendered = await ctx.startRendering();
+      // Normalise
+      let peak = 0;
+      for (let ch = 0; ch < rendered.numberOfChannels; ch++)
+        for (const s of rendered.getChannelData(ch)) if (Math.abs(s) > peak) peak = Math.abs(s);
+      if (peak > 0)
+        for (let ch = 0; ch < rendered.numberOfChannels; ch++) {
+          const d = rendered.getChannelData(ch);
+          for (let i = 0; i < d.length; i++) d[i] /= peak;
+        }
+      return URL.createObjectURL(new Blob([bufferToWav(rendered)], { type: 'audio/wav' }));
+    }
+
+    // ── Cave reverb toggle ─────────────────────────────────────────────────────
+
+    let caveActive = false;
+    const caveBtn = document.getElementById('caveToggle');
+
+    caveBtn.addEventListener('click', async () => {
+      caveActive = !caveActive;
+      caveBtn.textContent = `Cave Reverb: ${caveActive ? 'ON' : 'OFF'}`;
+      caveBtn.classList.toggle('active', caveActive);
+      await audio.transitionToEnvironment(caveActive ? 'cave' : 'none', 1500);
+    });
+
+    // ── Three.js scene ─────────────────────────────────────────────────────────
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a14);
+    scene.fog = new THREE.Fog(0x0a0a14, 15, 40);
+
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.5, 10);
+
+    // Lighting
+    scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+    const keyLight = new THREE.DirectionalLight(0x00d9ff, 1.5);
+    keyLight.position.set(4, 6, 4);
+    keyLight.castShadow = true;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xff6b6b, 0.6);
+    fillLight.position.set(-4, 2, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0x00d9ff, 0.8, 12);
+    rimLight.position.set(0, 3, -4);
+    scene.add(rimLight);
+
+    // Ground plane
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(40, 40),
+      new THREE.MeshStandardMaterial({ color: 0x0d0d1f, roughness: 0.9 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // ── Load GLB model ─────────────────────────────────────────────────────────
+
+    const loader = new GLTFLoader();
+    let model = null;
+
+    loader.loadAsync('./assets/logo_mesh.glb').then((gltf) => {
+      model = gltf.scene;
+
+      // Normalise scale and centre regardless of export dimensions
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      model.scale.setScalar(3 / maxDim);
+
+      const centre = new THREE.Vector3();
+      box.getCenter(centre);
+      model.position.sub(centre.multiplyScalar(3 / maxDim));
+      model.position.y += 0.2;
+
+      model.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+
+      scene.add(model);
+    });
+
+    // ── WASD camera controls ───────────────────────────────────────────────────
+
+    const keys = {};
+    window.addEventListener('keydown', (e) => { keys[e.code] = true; e.preventDefault(); });
+    window.addEventListener('keyup',   (e) => { keys[e.code] = false; });
+
+    const SPEED  = 0.07;
+    const BOUNDS = { xMin: -8, xMax: 8, zMin: 2.5, zMax: 18 };
+    const LOOK_TARGET = new THREE.Vector3(0, 0, 0);
+
+    function updateCamera() {
+      if (keys['KeyW'] || keys['ArrowUp'])
+        camera.position.z = Math.max(BOUNDS.zMin, camera.position.z - SPEED);
+      if (keys['KeyS'] || keys['ArrowDown'])
+        camera.position.z = Math.min(BOUNDS.zMax, camera.position.z + SPEED);
+      if (keys['KeyA'] || keys['ArrowLeft'])
+        camera.position.x = Math.max(BOUNDS.xMin, camera.position.x - SPEED);
+      if (keys['KeyD'] || keys['ArrowRight'])
+        camera.position.x = Math.min(BOUNDS.xMax, camera.position.x + SPEED);
+
+      camera.lookAt(LOOK_TARGET);
+    }
+
+    // ── Listener tracking ──────────────────────────────────────────────────────
+
+    const _fwd = new THREE.Vector3();
+
+    function updateListener() {
+      audio.setListenerPosition({
+        x: camera.position.x,
+        y: camera.position.y,
+        z: camera.position.z
+      });
+
+      camera.getWorldDirection(_fwd);
+      audio.setListenerOrientation(
+        { x: _fwd.x, y: _fwd.y, z: _fwd.z },
+        { x: 0, y: 1, z: 0 }
+      );
+    }
+
+    // ── HUD ────────────────────────────────────────────────────────────────────
+
+    const statDist = document.getElementById('statDist');
+    const statX    = document.getElementById('statX');
+
+    function updateHUD() {
+      const dist = camera.position.distanceTo(LOOK_TARGET);
+      statDist.textContent = dist.toFixed(1) + ' u';
+      statX.textContent    = camera.position.x.toFixed(1);
+    }
+
+    // ── Resize ─────────────────────────────────────────────────────────────────
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // ── Render loop ────────────────────────────────────────────────────────────
+
+    (function animate() {
+      requestAnimationFrame(animate);
+
+      if (model) model.rotation.y += 0.003;
+
+      updateCamera();
+      updateListener();
+      updateHUD();
+      renderer.render(scene, camera);
+    })();
+  </script>
+</body>
+</html>
