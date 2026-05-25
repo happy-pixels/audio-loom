@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio Loom — Basic Audio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+      background: #0f0f1a;
+      color: #e0e0e0;
+    }
+
+    h1 { color: #00d9ff; border-bottom: 2px solid #00d9ff; padding-bottom: 8px; }
+    h2 { color: #aaa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 12px; }
+
+    .card {
+      background: #1a1a2e;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 16px 0;
+    }
+
+    .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+
+    button {
+      background: #0f3460;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.15s;
+    }
+    button:hover  { background: #1a4f8a; }
+    button:active { background: #00d9ff; color: #000; }
+
+    label { min-width: 110px; font-size: 14px; color: #aaa; }
+    input[type="range"] { width: 160px; accent-color: #00d9ff; }
+    span.val { min-width: 40px; font-size: 14px; }
+
+    .log {
+      background: #0a0a14;
+      border-radius: 5px;
+      padding: 10px;
+      height: 140px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-entry { padding: 2px 0; border-bottom: 1px solid #1a1a2e; }
+    .log-start  { color: #4ade80; }
+    .log-end    { color: #f87171; }
+    .log-load   { color: #60a5fa; }
+    .log-error  { color: #ff6b6b; }
+
+    #overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    #overlay button { font-size: 20px; padding: 16px 36px; background: #00d9ff; color: #000; }
+    #overlay button:hover { background: #00b8d9; }
+  </style>
+</head>
+<body>
+
+  <div id="overlay">
+    <button id="startBtn">Click to Enable Audio</button>
+  </div>
+
+  <h1>Basic Audio</h1>
+
+  <div class="card">
+    <h2>Volume</h2>
+    <div class="row">
+      <label>Master</label>
+      <input type="range" id="masterVol" min="0" max="100" value="100">
+      <span class="val" id="masterVolVal">100%</span>
+    </div>
+    <div class="row">
+      <label>SFX</label>
+      <input type="range" id="sfxVol" min="0" max="100" value="100">
+      <span class="val" id="sfxVolVal">100%</span>
+    </div>
+    <div class="row">
+      <label>Music</label>
+      <input type="range" id="musicVol" min="0" max="100" value="100">
+      <span class="val" id="musicVolVal">100%</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Sound Effects</h2>
+    <!-- Add buttons for each SFX key registered below -->
+    <div class="row" id="sfxButtons">
+      <button data-key="click">Click</button>
+      <button data-key="slide">Slide</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Music</h2>
+    <div class="row">
+      <button id="playMusic">Play</button>
+      <button id="pauseMusic">Pause</button>
+      <button id="resumeMusic">Resume</button>
+      <button id="stopMusic">Stop</button>
+    </div>
+    <div class="row">
+      <button id="fadeInMusic">Fade In (2s)</button>
+      <button id="fadeOutMusic">Fade Out (2s)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Event Log</h2>
+    <div class="row"><button id="clearLog">Clear</button></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "rxjs": "https://esm.sh/rxjs@7.8.2",
+      "rxjs/operators": "https://esm.sh/rxjs@7.8.2/operators",
+      "audio-loom": "../dist/index.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import { AudioManager } from 'audio-loom';
+
+    const audio = new AudioManager();
+
+    // ── Register tracks ────────────────────────────────────────────────────────
+    // Replace paths with your actual audio files.
+
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click001.mp3');
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click002.mp3');
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click003.mp3');
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click004.mp3');
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click005.mp3');
+    audio.addAudioTrack('click', 'sfx', './sounds/clicks/click006.mp3');
+
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide001.mp3');
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide002.mp3');
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide003.mp3');
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide004.mp3');
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide005.mp3');
+    audio.addAudioTrack('slide', 'sfx', './sounds/slide/slide006.mp3');
+
+    audio.addAudioTrack('music', 'music', './sounds/Paper_Window.mp3');
+
+    // ── Init ───────────────────────────────────────────────────────────────────
+
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      await audio.initAudio();
+      document.getElementById('overlay').style.display = 'none';
+    });
+
+    // ── Volume ─────────────────────────────────────────────────────────────────
+
+    document.getElementById('masterVol').addEventListener('input', (e) => {
+      audio.setMasterVolume(e.target.value / 100);
+      document.getElementById('masterVolVal').textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('sfxVol').addEventListener('input', (e) => {
+      audio.setAudioVolume('sfx', e.target.value / 100);
+      document.getElementById('sfxVolVal').textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('musicVol').addEventListener('input', (e) => {
+      audio.setAudioVolume('music', e.target.value / 100);
+      document.getElementById('musicVolVal').textContent = `${e.target.value}%`;
+    });
+
+    // ── SFX ────────────────────────────────────────────────────────────────────
+
+    document.getElementById('sfxButtons').addEventListener('click', (e) => {
+      const key = e.target.dataset.key;
+      if (key) audio.playAudioTrack(key);
+    });
+
+    // ── Music ──────────────────────────────────────────────────────────────────
+
+    document.getElementById('playMusic').addEventListener('click', () => audio.playContinuous('music'));
+    document.getElementById('pauseMusic').addEventListener('click', () => audio.pauseContinuous());
+    document.getElementById('resumeMusic').addEventListener('click', () => audio.resumeContinuous());
+    document.getElementById('stopMusic').addEventListener('click', () => audio.stopContinuous());
+    document.getElementById('fadeInMusic').addEventListener('click', () => audio.fadeIn('music', 2000));
+    document.getElementById('fadeOutMusic').addEventListener('click', () => audio.fadeOut(2000));
+
+    // ── Event log ──────────────────────────────────────────────────────────────
+
+    const log = document.getElementById('log');
+    const addEntry = (cls, text) => {
+      const el = document.createElement('div');
+      el.className = `log-entry ${cls}`;
+      el.textContent = text;
+      log.prepend(el);
+    };
+
+    audio.onTrackStart$.subscribe(e => addEntry('log-start', `▶ ${e.key} [${e.group}]`));
+    audio.onTrackEnd$.subscribe(e => addEntry('log-end', `■ ${e.key} [${e.group}]`));
+    audio.onLoadComplete$.subscribe(e => addEntry('log-load', `✓ loaded ${e.key} (${e.duration.toFixed(1)}s)`));
+    audio.onError$.subscribe(e => addEntry('log-error', `✗ ${e.message}`));
+
+    document.getElementById('clearLog').addEventListener('click', () => log.innerHTML = '');
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 {
   "name": "@happy-pixels/audio-loom",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Framework-agnostic audio management library built on the Web Audio API for games and interactive applications",
   "main": "dist/index.js",
   "types": "./dist/index.d.ts",
@@ -24,7 +24,9 @@
     "test:coverage": "vitest run --coverage",
     "docs": "typedoc",
     "prepublishOnly": "pnpm run test:run && pnpm run build",
-    "prepare": "pnpm run build"
+    "prepare": "pnpm run build",
+    "build:examples": "tsc -p tsconfig.examples.json && node scripts/fix-import-extensions.js",
+    "serve:examples": "npx serve ./examples -l 3000"
   },
   "keywords": [
     "audio",
